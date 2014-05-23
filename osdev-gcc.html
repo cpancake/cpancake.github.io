@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Cross-compiling GCC for OS Development - andrew rogers: programming stuff</title>
+        <meta charset="utf-8" />
+        <link href="/theme/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="/theme/css/pygments.css" rel="stylesheet" />
+        <link href="/theme/css/style.css" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    </head>
+
+    <body id="index" class="archive">
+        <div class="container">
+            <div class="header">
+                <ul class="nav nav-pills pull-right">
+                    <li class=""><a href="/">Home</a></li>
+                    <li><a href="/archives.html">Archives</a></li>
+                </ul>
+                <h3 class="text-muted"><a href="/">andrew rogers: programming stuff</a></h3>
+				<h2 class="text-muted"></h2>
+             </div>
+<section id="content" class="article content">
+  <header>
+    <h2 class="entry-title">
+      <a href="/osdev-gcc.html" rel="bookmark"
+         title="Permalink to Cross-compiling GCC for OS Development">Cross-compiling GCC for OS Development</a></h2>
+ 
+    <div class="post-info text-muted">
+      Posted on <abbr class="published" title="2014-05-22T17:47:00">
+        Thu 22 May 2014
+      </abbr>
+      <address class="vcard author">
+        by <a class="url fn" href="/author/cpancake.html">cpancake</a>
+      </address> in <a href="/category/posts.html">Posts</a> 
+      Tagged <a href="/tag/programming.html">programming </a><a href="/tag/osdev.html">osdev </a>    </div><!-- /.post-info -->
+  </header>
+     
+  <div class="entry-content">
+    <p>I'm going to be writing some articles about operating system development, because it seems that most of the tutorials available are either outdated or incomplete. For the first part, I'm going to be going over how to compile your OS. This was adapted from the <a href="http://wiki.osdev.org/GCC_Cross-Compiler">osdev.org</a> guide.</p>
+<p>To compile an operating system, a linker is needed. The usual choice for this is GCC's linker, but it needs some work before you can use it for operating system development. That's because GCC, by default, compiles for the native operating system (Windows EXEs on Windows, Linux ELF files on Linux). To compile operating systems, we must recompile GCC for platform-less ELF files, like a kernel. This is simple, but it takes a while.</p>
+<h2>Preparation</h2>
+<p>First, if you're on Windows, you need to install Cygwin. It's likely possible to build GCC on normal Windows, but it's much easier to do it on Cygwin. <a href="https://cygwin.com/install.html">Download</a> and install Cygwin, and stop at the package installation screen. Make sure you install these packages:</p>
+<ul>
+<li>gcc-core</li>
+<li>gcc-g++</li>
+<li>make</li>
+<li>bison</li>
+<li>flex</li>
+<li>gmp and libgmp-devel</li>
+<li>mpfr and libmpfr-devel</li>
+<li>mpclib and libmpc-devel</li>
+</ul>
+<p>Next, you'll need to download the GCC sources. Download binutils <a href="http://ftp.gnu.org/gnu/binutils/binutils-2.24.tar.gz">here</a>, and gcc <a href="http://ftp.gnu.org/gnu/gcc/gcc-4.9.0/gcc-4.9.0.tar.gz">here</a>. Extract them to your Cygwin home folder (mine is <code>C:\cygwin64\home\Andrew</code>, though you'll need to start up Cygwin once to create this directory). </p>
+<h2>Compiling</h2>
+<p>After you've installed Cygwin and downloaded the sources, <code>cd</code> to your home directory. Then, you'll need to setup some environment variables:</p>
+<div class="highlight"><pre><span class="nb">export </span><span class="nv">PREFIX</span><span class="o">=</span><span class="s2">&quot;$HOME/opt/cross&quot;</span>
+<span class="nb">export </span><span class="nv">TARGET</span><span class="o">=</span>i386-elf
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;$PREFIX/bin:$PATH&quot;</span>
+</pre></div>
+
+
+<p><code>PREFIX</code> defines the location that the compiled binaries will be installed. <code>TARGET</code> defines the platform that you want to compile for - in this case, 32-bit ELF. We also add the installation directory to the <code>PATH</code>, so that the compiled libraries will be available when we compile gcc.</p>
+<h2>binutils</h2>
+<p>First, we make a directory to install binutils into:</p>
+<div class="highlight"><pre>mkdir build
+<span class="nb">cd </span>build
+</pre></div>
+
+
+<p>Then, we configure binutils.</p>
+<div class="highlight"><pre>../binutils-2.24/configure --target<span class="o">=</span><span class="nv">$TARGET</span> --prefix<span class="o">=</span><span class="s2">&quot;$PREFIX&quot;</span> --disable-nls --disable-werror
+</pre></div>
+
+
+<p>This should create a <code>Makefile</code>. If it doesn't, leave a comment with the error or ask on StackOverflow.</p>
+<p>Next, we should compile and install binutils:</p>
+<div class="highlight"><pre>make
+make install
+</pre></div>
+
+
+<p>Finally, clear the build directory so we can use it for GCC:</p>
+<div class="highlight"><pre>rm -rf *
+</pre></div>
+
+
+<h2>gcc</h2>
+<p>Configure gcc the same way:</p>
+<div class="highlight"><pre>../gcc-4.9.0/configure --target<span class="o">=</span><span class="nv">$TARGET</span> --prefix<span class="o">=</span><span class="s2">&quot;$PREFIX&quot;</span> --disable-nls --enable-languages<span class="o">=</span>c,c++ --without-headers
+</pre></div>
+
+
+<p>Then, we build gcc:</p>
+<div class="highlight"><pre>make all-gcc
+make all-target-libgcc
+make install-gcc
+make install-target-libgcc
+</pre></div>
+
+
+<p>You now have a cross-compiled GCC build. The binaries are in <code>~/opt/cross</code>, which you can add to your Windows path so that you can use it without prefixing it with the directory.</p>
+<p>Next post I'll be covering how to setup an OS development environment and compile a simple kernel using GRUB.</p>
+  </div><!-- /.entry-content -->
+</section>
+    <div class="comment">
+        <div id="disqus_thread"></div> <!-- comment app container -->
+    </div>
+	<!-- Comment BEGIN -->
+    <script type="text/javascript">
+        var disqus_shortname = 'commiesprogblog'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+     <!-- Comment END -->
+            <footer id="contentinfo" class="footer">
+                    <nav class="pull-right bottom-nav">
+                        <a href="/None">RSS</a>
+                    </nav>
+                    <address id="about" class="vcard body">
+                    &copy; <a href="">andrew rogers: programming stuff</a> Proudly powered by <a href="http://getpelican.com/">Pelican</a>
+                    </address><!-- /#about -->
+            </footer><!-- /#contentinfo -->
+        </div><!-- container -->
+    </body>
+</html>
