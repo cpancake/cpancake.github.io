@@ -108,7 +108,7 @@
 <span class="nf">%.o</span><span class="o">:</span> <span class="m">%.asm</span>
     nasm -felf <span class="nv">$&lt;</span> -o <span class="nv">$@</span>
 
-<span class="nf">%.o</span><span class="o">:</span> <span class="m">%.c %.cpp %.cc</span>
+<span class="nf">%.o</span><span class="o">:</span> <span class="m">%.c</span>
     i386-elf-g++ -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti -c <span class="nv">$&lt;</span>
 
 <span class="nf">kernel</span><span class="o">:</span> 
@@ -153,7 +153,7 @@
 
 
 <p>It's simple and short. When you run <code>make</code> in the root directory, it will build and run your operating system. If you only need to run it, you can use <code>make run</code>. If you only need to build it, you can use <code>make build</code>.</p>
-<p>Now, run the code via <code>make</code>. Press "start" in Bochs, press enter in GRUB, and then Bochs will hang. Don't worry, that's because we put in an infinite loop. Just press shutdown. The output console will display the registers when Bochs shutdown. Check the value of EAX, which is the return value of our C function. Is it <code>deadbeef</code>? If so, good job, your code is working!</p>
+<p>Now, run the code via <code>make</code> (make sure you're running <code>make</code> via Cygwin). Press "start" in Bochs, press enter in GRUB, and then Bochs will hang. Don't worry, that's because we put in an infinite loop. Just press shutdown. The output console will display the registers when Bochs shutdown. Check the value of EAX, which is the return value of our C function. Is it <code>deadbeef</code>? If so, good job, your code is working! If your code doesn't work, take a look at the code on <a href="https://github.com/cpancake/helios/tree/tut-2">GitHub</a> and see if you've done something wrong.</p>
 <p>That's it for this tutorial. Next time, we'll get into displaying stuff on screen and other important bits. From this point on, all the code is available on <a href="http://github.com/cpancake/helios">GitHub</a>, so watch that repository if you want an update when I publish a new post. Until next time!</p>
   </div><!-- /.entry-content -->
 </section>
