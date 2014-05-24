@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OS Dev Part 3: Writing Text - andrew rogers: programming stuff</title>
+        <meta charset="utf-8" />
+        <link href="/theme/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="/theme/css/pygments.css" rel="stylesheet" />
+        <link href="/theme/css/style.css" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    </head>
+
+    <body id="index" class="archive">
+        <div class="container">
+            <div class="header">
+                <ul class="nav nav-pills pull-right">
+                    <li class=""><a href="/">Home</a></li>
+                    <li><a href="/archives.html">Archives</a></li>
+                </ul>
+                <h3 class="text-muted"><a href="/">andrew rogers: programming stuff</a></h3>
+				<h2 class="text-muted"></h2>
+             </div>
+<section id="content" class="article content">
+  <header>
+    <h2 class="entry-title">
+      <a href="/osdev-screen.html" rel="bookmark"
+         title="Permalink to OS Dev Part 3: Writing Text">OS Dev Part 3: Writing Text</a></h2>
+ 
+    <div class="post-info text-muted">
+      Posted on <abbr class="published" title="2014-05-24T02:30:00">
+        Sat 24 May 2014
+      </abbr>
+      <address class="vcard author">
+        by <a class="url fn" href="/author/cpancake.html">cpancake</a>
+      </address> in <a href="/category/posts.html">Posts</a> 
+      Tagged <a href="/tag/programming.html">programming </a><a href="/tag/osdev.html">osdev </a>    </div><!-- /.post-info -->
+  </header>
+     
+  <div class="entry-content">
+    <p>Now that we've set up the environment, the first step is writing text to the screen. This might seem odd - shouldn't we cover all the important bits first? Normally, you'd be right. You shouldn't write your UI first and your backend later. But since there's no way to log to the console in OS development, having a print function available as soon as possible can make things much less painful. Writing to the screen is also pretty straightforward. It's doing it right that gets complicated. Buckle up, this is going to be long.</p>
+<h2>Real Mode and Protected Mode</h2>
+<p>When your computer starts the operating system, it starts it in something called "real mode." This was the original mode that x86 processors ran in, but it's very limited. It's 16-bit, there's only 1MB of RAM available, and it's missing a lot of the "real" operating system features. However, since the Intel 80286 chip, we've had protected mode. This means that, not only do we have full, native access to RAM in 32-bit, we also have memory protection features. This means that you can set it up so that programs can only access the RAM they're given - essential to a real operating system. We'll be covering this later. While operating systems <em>have</em> been written in real mode (MS-DOS, for one), it's not a fun experience. Thankfully, because we're using GRUB, we don't have to worry about it. GRUB launches us in protected mode (32-bit and full feature) already.</p>
+<p>However, since we're in protected mode, we can't use any of the useful BIOS interrupts. Interrupts are what you use to tell a lower level component to do something - applications use interrupts to perform calls to the operating system, and the operating system (in real mode) uses interrupts to talk to the BIOS. But since we're in protected mode, we can't do this. This doesn't really make it more difficult (though it does, thankfully, save us from writing a bunch of assembly), but it might look different than some other "hello world" tutorials you've seen.</p>
+<h2>Printing Without Interrupts</h2>
+<p>To write to the screen, we'll be writing directly to video memory. Don't worry, pointers make this simple. However, there is one function that's necessary to the console that we can't do just by writing to memory: moving the cursor. To move the cursor, we have to write directly to the VGA controller. To do this, we use the <code>outb</code> assembly instruction. This tells the CPU to write a value at a certain port we provide to it. The port we're writing to will let us change the cursor position. </p>
+<p>Both the <code>outb</code> and <code>inb</code> instructions (writing out to a port and receiving from a port) are going to be implemented in inline assembly (because that seems to be the only way people do it, and I don't want to be unnecessarily confusing.) If you don't know, inline assembly is a certain syntax for writing assembly inside C and C++. It's ugly and unintelligible, but sometimes it's necessary. Create two new files:</p>
+<h4>util.c</h4>
+<div class="highlight"><pre><span class="cp">#include &quot;util.h&quot;</span>
+
+<span class="kt">unsigned</span> <span class="kt">char</span> <span class="nf">kutil_inportb</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">port</span><span class="p">)</span> 
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">ret</span><span class="p">;</span>
+    <span class="n">asm</span> <span class="k">volatile</span> <span class="p">(</span><span class="s">&quot;inb %%dx,%%al&quot;</span><span class="o">:</span><span class="s">&quot;=a&quot;</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span><span class="o">:</span><span class="s">&quot;d&quot;</span><span class="p">(</span><span class="n">port</span><span class="p">));</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">kutil_outportb</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">port</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">value</span><span class="p">)</span> 
+<span class="p">{</span>
+    <span class="n">asm</span> <span class="k">volatile</span> <span class="p">(</span><span class="s">&quot;outb %%al,%%dx&quot;</span><span class="o">:</span> <span class="o">:</span><span class="s">&quot;d&quot;</span><span class="p">(</span><span class="n">port</span><span class="p">),</span><span class="s">&quot;a&quot;</span><span class="p">(</span><span class="n">value</span><span class="p">));</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h4>util.h</h4>
+<div class="highlight"><pre><span class="cp">#ifndef INLINE_UTIL_H</span>
+<span class="cp">#define INLINE_UTIL_H</span>
+
+<span class="kt">unsigned</span> <span class="kt">char</span> <span class="nf">kutil_inportb</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">port</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">kutil_outportb</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">port</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">data</span><span class="p">);</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+
+
+<p>Here we define the two functions - <code>kutil_inportb</code> for <code>inb</code> and <code>kutil_outportb</code> for <code>outb</code>, and write a header file for them. This will allow us to include these functions in other files in this kernel. It includes a "header guard," which is a way to make sure the file doesn't get included multiple times (which can lead to problems). Also notice how our functions are prefixed with <code>kutil</code>. All our kernel functions will be prefixed like this, with the "k" denoting that it's a kernel function and the part after to show which file it comes from. This makes it easy to tell which functions are kernel functions (and should not be used outside of the kernel, once we get to programs), and what file to look for them in if we need to debug it.</p>
+<h3>libhstd</h3>
+<p>In the course of writing this kernel, we are going to write a lot of stuff that isn't specific to the kernel (that is, we can safely use it in programs on the OS). Because of this, we'll be putting these functions in a library named libhstd - the Helios standard library. Create a directory named <code>lib</code> in your <code>src</code> folder, and another one named <code>hstd</code> in that. Create a Makefile:</p>
+<div class="highlight"><pre><span class="nv">OBJS</span><span class="o">=</span>memory.o string.o
+<span class="nv">CC</span><span class="o">=</span>i386-elf-g++
+<span class="nv">LD</span><span class="o">=</span>i386-elf-ld
+<span class="nv">AR</span><span class="o">=</span>i386-elf-ar
+
+<span class="nf">all</span><span class="o">:</span> <span class="m">hstd</span>
+
+<span class="nf">hstd</span><span class="o">:</span> <span class="m">$(OBJS)</span>
+    <span class="k">$(</span>AR<span class="k">)</span> rcs libhstd.a <span class="k">$(</span>OBJS<span class="k">)</span>
+
+<span class="nf">%.o</span><span class="o">:</span> <span class="m">%.c</span>
+    <span class="k">$(</span>CC<span class="k">)</span> -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fpermissive -fno-rtti -c <span class="nv">$&lt;</span>
+
+<span class="nf">clean</span><span class="o">:</span>
+    rm -rf *.o
+</pre></div>
+
+
+<p>First, you might notice that we're using the variable CC for compiler, LD for linker, etc. This is only to fit with convention, as I realized after I posted the last tutorial. Feel free to change the main Makefile to this convention, if you want, but you should be able to follow along just fine.</p>
+<p>Next, you might notice that this looks very similar to the Makefile for the OS, except for one key difference. After compiling the object files, we create an archive with the <code>ar</code> command, which can then be linked with the kernel to allow it to access this library's functions. We also specify the objects as <code>memory.o</code> and <code>string.o</code>, which are the components of this library that we'll be writing today.</p>
+<p>First, we need a header file that won't be linked with anything. Since we're using g++ to compile this, we need to export our functions in a way that languages that aren't using C++ naming conventions (like C and assembly) can understand. To do this, we create the file export.h<code>in the</code>hstd` directory:</p>
+<div class="highlight"><pre><span class="cp">#define EXPORT extern &quot;C&quot;</span>
+</pre></div>
+
+
+<p>We will include this file in every library header, so that we can make sure that our functions are named correctly when exported. Next, we'll create the memory portion of the library:</p>
+<h4>memory.c</h4>
+<div class="highlight"><pre><span class="cp">#include &quot;memory.h&quot;</span>
+
+<span class="cm">/*</span>
+<span class="cm">memcpy</span>
+<span class="cm">Copy count bytes from src to dest, and return dest.</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">memcpy</span><span class="p">(</span><span class="kt">unsigned</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">src_pointer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">src</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest_pointer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">dest</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(;</span><span class="n">count</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;</span><span class="n">count</span><span class="o">--</span><span class="p">)</span>
+        <span class="o">*</span><span class="n">dest_pointer</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">src_pointer</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">dest</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm">memset</span>
+<span class="cm">Set count bytes in dest to val, and return dest.</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">memset</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">val</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest_pointer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">dest</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(;</span><span class="n">count</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;</span><span class="n">count</span><span class="o">--</span><span class="p">)</span>
+        <span class="o">*</span><span class="n">dest_pointer</span><span class="o">++</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">dest</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm">memsetw</span>
+<span class="cm">Set count bytes in dest to val, and return dest (but 16 bit this time).</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="nf">memsetw</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">val</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">dest_pointer</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="p">)</span><span class="n">dest</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(;</span><span class="n">count</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">;</span><span class="n">count</span><span class="o">--</span><span class="p">)</span>
+        <span class="o">*</span><span class="n">dest_pointer</span><span class="o">++</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">dest</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h4>memory.h</h4>
+<div class="highlight"><pre><span class="cp">#ifndef HSTD_MEMORY_H</span>
+<span class="cp">#define HSTD_MEMORY_H</span>
+
+<span class="cp">#include &quot;export.h&quot;</span>
+
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">memcpy</span><span class="p">(</span><span class="kt">unsigned</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">src</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">memset</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">val</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+<span class="n">EXPORT</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="nf">memsetw</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">dest</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">val</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">);</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+
+
+<p>Here, we define a few simple functions for copying and setting memory. <code>memcpy</code> copies memory from one location to another. <code>memset</code> and <code>memsetw</code> set an entire block of memory to one value, though one takes a location as a char and the other takes the location as a short, respectively. Also notice that we use the EXPORT macro next to each definition.</p>
+<p>Next, there's the string portion. This has some more complicated stuff, plus one function that I "stole" (though it was public domain) because I couldn't for the life of me write a string reversal function that didn't segfault. Hurray for me.</p>
+<h4>string.c</h4>
+<div class="highlight"><pre><span class="cp">#include &quot;string.h&quot;</span>
+
+<span class="cm">/*</span>
+<span class="cm">strlen</span>
+<span class="cm">Measure length of str.</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">int</span> <span class="nf">strlen</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm">strrev</span>
+<span class="cm">Return a reversed representation of the string.</span>
+<span class="cm">http://www8.cs.umu.se/~isak/snippets/strrev.c</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">strrev</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">p1</span><span class="p">,</span> <span class="o">*</span><span class="n">p2</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span> <span class="n">str</span> <span class="o">||</span> <span class="o">!</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">str</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">p1</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">str</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">str</span> <span class="o">+</span> <span class="n">strlen</span><span class="p">(</span><span class="n">str</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">p2</span> <span class="o">&gt;</span> <span class="n">p1</span><span class="p">;</span> <span class="o">++</span><span class="n">p1</span><span class="p">,</span> <span class="o">--</span><span class="n">p2</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span><span class="n">p1</span> <span class="o">^=</span> <span class="o">*</span><span class="n">p2</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">p2</span> <span class="o">^=</span> <span class="o">*</span><span class="n">p1</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">p1</span> <span class="o">^=</span> <span class="o">*</span><span class="n">p2</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">str</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Internally used for the next two functions</span>
+<span class="kt">void</span> <span class="nf">strtobase</span><span class="p">(</span><span class="kt">int</span> <span class="n">num</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">output</span><span class="p">,</span> <span class="kt">int</span> <span class="n">base</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">digits</span> <span class="o">=</span> <span class="s">&quot;0123456789ABCDEF&quot;</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">num</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="o">*</span><span class="n">output</span><span class="o">++</span> <span class="o">=</span> <span class="sc">&#39;-&#39;</span><span class="p">;</span>
+        <span class="n">num</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">do</span> <span class="p">{</span>
+        <span class="c1">// get each digit in the base we want it in - note that num % base returns the last digit, </span>
+        <span class="c1">// which is why we have to reverse the string.</span>
+        <span class="o">*</span><span class="n">output</span><span class="o">++</span> <span class="o">=</span> <span class="n">digits</span><span class="p">[</span><span class="n">num</span> <span class="o">%</span> <span class="n">base</span><span class="p">];</span>
+        <span class="n">num</span> <span class="o">=</span> <span class="n">num</span> <span class="o">/</span> <span class="n">base</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="n">num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">output</span> <span class="o">+=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm">stribase</span>
+<span class="cm">Return a string from the given integer in the given base (up to base 16) to output.</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">void</span> <span class="nf">stribase</span><span class="p">(</span><span class="kt">int</span> <span class="n">num</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">output</span><span class="p">,</span> <span class="kt">int</span> <span class="n">base</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">strtobase</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="n">base</span><span class="p">);</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">strrev</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">output</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/*</span>
+<span class="cm">stri</span>
+<span class="cm">Return a string from the given integer to output.</span>
+<span class="cm">*/</span>
+<span class="n">EXPORT</span> <span class="kt">void</span> <span class="nf">stri</span><span class="p">(</span><span class="kt">int</span> <span class="n">num</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">output</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">strtobase</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">strrev</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">output</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>This defines a few functions that are going to be very useful to us. First, <code>strlen</code> is obvious - it takes the length of a string by finding how many bytes are between the start and its null terminator (no, it doesn't work with unicode - but neither does the BIOS). <code>strrev</code> takes a string and returns the reverse of it; pretty simple in concept, but I'm not really sure how this implementation works (but it works so hey). The last two are methods to convert a number to a string. The first one can convert a number to an arbitrary base between 1 and 16 (so, binary, decimal, octal, hexadecimal, etc), and the second one uses this function to provide an easier way to print numbers. </p>
+<p>Now we can amend our OS Makefile (the one in the src directory) to build this library when we build the kernel. Just add this target:</p>
+<div class="highlight"><pre><span class="nf">libs</span><span class="o">:</span>
+    <span class="nb">cd </span>lib/hstd <span class="o">&amp;&amp;</span> make <span class="o">&amp;&amp;</span> mv libhstd.a ../../
+</pre></div>
+
+
+<p>This will build the library and move the binary to the src directory. Next, change your <code>all</code> target:</p>
+<div class="highlight"><pre><span class="nf">all</span><span class="o">:</span> <span class="m">objects libs kernel</span>
+    rm -rf *.o
+    mv kernel.bin ../disk/files/boot
+</pre></div>
+
+
+<p>Of course, we're going to need to link this library with the kernel. So add this to the top of your makefile:</p>
+<div class="highlight"><pre><span class="nv">LIBS</span><span class="o">=</span>libhstd.a
+</pre></div>
+
+
+<p>And change your <code>kernel</code> target:</p>
+<div class="highlight"><pre><span class="k">$(</span>LD<span class="k">)</span> -T link.ld -o kernel.bin <span class="k">$(</span>OBJS<span class="k">)</span> <span class="k">$(</span>LIBS<span class="k">)</span>
+</pre></div>
+
+
+<p>...and your <code>clean</code> target, too:</p>
+<div class="highlight"><pre><span class="nf">clean</span><span class="o">:</span> 
+    rm -rf <span class="k">$(</span>OBJS<span class="k">)</span>
+    rm -rf <span class="k">$(</span>LIBS<span class="k">)</span>
+    rm -rf ../disk/files/boot/kernel.bin
+</pre></div>
+
+
+<p>Great! Now you're ready to...actually do what you came to this post to do. Isn't organization great?</p>
+<h3>Writing Text</h3>
+<p>Create a file in your <code>src</code> directory named <code>screen.c</code>. We'll start by defining a few variables:</p>
+<div class="highlight"><pre><span class="cp">#define VIDEO_MEM 0xb8000</span>
+<span class="kt">int</span> <span class="n">cursor_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cursor_y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+
+
+<p>These are the cursor X and Y values. By incrementing them and calling a function to change the cursor location, we can move positions. In fact, that's the function we're going to write next:</p>
+<div class="highlight"><pre><span class="cm">/*</span>
+<span class="cm">kscrn_move_cursor</span>
+<span class="cm">Move the hardware cursor to x, y.</span>
+<span class="cm">*/</span>
+<span class="kt">void</span> <span class="nf">kscrn_move_cursor</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">position</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="mi">80</span><span class="p">;</span>
+
+    <span class="cm">/*</span>
+<span class="cm">    Since this is protected mode, we can&#39;t use a BIOS interrupt to move the cursor.</span>
+<span class="cm">    Instead, we tell the VGA controller directly.</span>
+<span class="cm">    */</span>
+    <span class="n">kutil_outportb</span><span class="p">(</span><span class="mh">0x3d4</span><span class="p">,</span> <span class="mi">14</span><span class="p">);</span>
+    <span class="n">kutil_outportb</span><span class="p">(</span><span class="mh">0x3d5</span><span class="p">,</span> <span class="n">position</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">);</span>
+    <span class="n">kutil_outportb</span><span class="p">(</span><span class="mh">0x3d4</span><span class="p">,</span> <span class="mi">15</span><span class="p">);</span>
+    <span class="n">kutil_outportb</span><span class="p">(</span><span class="mh">0x3d5</span><span class="p">,</span> <span class="n">position</span><span class="p">);</span>
+
+    <span class="n">cursor_x</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="n">cursor_y</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Remember when I mentioned the VGA controller? Here, we write the position of the cursor (in characters - x + y * 80 is the amount of characters from 0 that the cursor is at) to the VGA controller. This will move our cursor position.</p>
+<p>Now it's time to go over how we're going to write to the screen. At the location 0xB8000 (<code>VIDEO_MEM</code>) is located the video RAM. In text mode (which we're in, by default), this is 80 by 25 by 2 bytes in size - 80 columns, 25 rows, and 2 bytes per character (one byte is the character, one byte is the color). Knowing this, we can write a simple "write character" function:</p>
+<div class="highlight"><pre><span class="kt">void</span> <span class="nf">kscrn_write_char</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">video</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span><span class="o">*</span><span class="p">)</span><span class="n">VIDEO_MEM</span><span class="p">;</span>
+    <span class="c1">// navigate to cursor position</span>
+    <span class="n">video</span> <span class="o">+=</span> <span class="n">cursor_x</span> <span class="o">+</span> <span class="n">cursor_y</span> <span class="o">*</span> <span class="mi">80</span><span class="p">;</span>
+    <span class="o">*</span><span class="n">video</span><span class="o">++</span> <span class="o">=</span> <span class="n">c</span> <span class="o">|</span> <span class="mh">0x07</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">;</span>
+    <span class="n">cursor_x</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">kscrn_move_cursor</span><span class="p">(</span><span class="n">cursor_x</span><span class="p">,</span> <span class="n">cursor_y</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Here, we create a pointer to the video memory, navigate to the cursor position (by incrementing the pointer by our cursor position), and write the character to it. This function isn't perfect, but we'll get back to that in a second. First, what does <code>c | 0x07 &lt;&lt; 8</code> mean? <code>c</code> is our character, so what we're doing is creating a short from the character byte and the color (white on black). </p>
+<p>I mentioned this function isn't perfect, and it's not - far from it. It doesn't handle any special characters, or wrap around, or scroll. We can solve two of those three by updating the function:</p>
+<div class="highlight"><pre><span class="kt">void</span> <span class="nf">kscrn_write_char</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="mh">0x08</span><span class="p">)</span> <span class="c1">// backspace</span>
+    <span class="p">{</span>
+        <span class="c1">// decrease cursor_x by one; if end of line, go to previous line; if first line, don&#39;t do anything</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">cursor_x</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">cursor_y</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">cursor_x</span> <span class="o">=</span> <span class="mi">79</span><span class="p">;</span>
+            <span class="n">cursor_y</span><span class="o">--</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">cursor_x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">cursor_x</span><span class="o">--</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="mh">0x09</span><span class="p">)</span> <span class="c1">// tab</span>
+        <span class="c1">// increase to a multiple of four i.e. the next tab stop</span>
+        <span class="c1">// wondering how it works? don&#39;t ask me, ask the guy who wrote bkerndev</span>
+        <span class="n">cursor_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">cursor_x</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;\r&#39;</span><span class="p">)</span> <span class="c1">// carriage return</span>
+        <span class="n">cursor_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// go to the start of the line</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">c</span> <span class="o">==</span> <span class="sc">&#39;\n&#39;</span><span class="p">)</span> <span class="c1">// newline</span>
+    <span class="p">{</span>
+        <span class="n">cursor_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">// go to the start of the line (\r)</span>
+        <span class="n">cursor_y</span><span class="o">++</span><span class="p">;</span> <span class="c1">// go to the next lien</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">c</span> <span class="o">&gt;=</span> <span class="mh">0x20</span><span class="p">)</span> <span class="c1">// space or higher; valid character</span>
+    <span class="p">{</span>
+        <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">video</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span><span class="o">*</span><span class="p">)</span><span class="n">VIDEO_MEM</span><span class="p">;</span>
+        <span class="c1">// navigate to cursor position</span>
+        <span class="n">video</span> <span class="o">+=</span> <span class="n">cursor_x</span> <span class="o">+</span> <span class="n">cursor_y</span> <span class="o">*</span> <span class="mi">80</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">video</span><span class="o">++</span> <span class="o">=</span> <span class="n">c</span> <span class="o">|</span> <span class="mh">0x07</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">;</span>
+        <span class="n">cursor_x</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">cursor_x</span> <span class="o">&gt;=</span> <span class="mi">80</span><span class="p">)</span> <span class="c1">// go to the next line if we&#39;ve written past this one</span>
+    <span class="p">{</span>
+        <span class="n">cursor_x</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">cursor_y</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">kscrn_move_cursor</span><span class="p">(</span><span class="n">cursor_x</span><span class="p">,</span> <span class="n">cursor_y</span><span class="p">);</span>
+    <span class="n">kscrn_scroll</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Here, we handle several common special characters. We also set ourselves up for handling scrolling by calling the function <code>kscrn_scroll</code>. This is a simple function. Since we're working with raw video memory, all we have to do is move the memory 80 * 2 * lines bytes up, and we've scrolled the console. Place this above <code>kscrn_write_char</code>:</p>
+<div class="highlight"><pre><span class="cm">/*</span>
+<span class="cm">kscrn_scroll</span>
+<span class="cm">Move the window up a line if cursor_y &gt; 25</span>
+<span class="cm">*/</span>
+<span class="kt">void</span> <span class="nf">kscrn_scroll</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">short</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">blank</span> <span class="o">=</span> <span class="mh">0x20</span> <span class="o">|</span> <span class="p">(</span><span class="mh">0x07</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">);</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">cursor_y</span> <span class="o">&lt;</span> <span class="mi">25</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">video</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span><span class="n">VIDEO_MEM</span><span class="p">;</span>
+    <span class="c1">// same as 25 - (cursor_y - 25 + 1) * 80 * 2</span>
+    <span class="kt">int</span> <span class="n">bottom</span> <span class="o">=</span> <span class="n">cursor_y</span> <span class="o">-</span> <span class="mi">24</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="p">(</span><span class="mi">25</span> <span class="o">-</span> <span class="n">bottom</span><span class="p">)</span> <span class="o">*</span> <span class="mi">80</span> <span class="o">*</span> <span class="mi">2</span><span class="p">;</span>
+    <span class="n">memcpy</span><span class="p">(</span><span class="n">video</span> <span class="o">+</span> <span class="n">bottom</span> <span class="o">*</span> <span class="mi">80</span><span class="p">,</span> <span class="n">video</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">video</span> <span class="o">+</span> <span class="p">(</span><span class="mi">25</span> <span class="o">-</span> <span class="n">bottom</span><span class="p">)</span> <span class="o">*</span> <span class="mi">80</span><span class="p">,</span> <span class="n">blank</span><span class="p">,</span> <span class="mi">80</span><span class="p">);</span>
+    <span class="n">cursor_y</span> <span class="o">=</span> <span class="mi">24</span><span class="p">;</span>
+    <span class="n">kscrn_move_cursor</span><span class="p">(</span><span class="n">cursor_x</span><span class="p">,</span> <span class="n">cursor_y</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Now, we have to clear the screen. GRUB leaves some stuff on the screen after starting up, so we'll call this function as soon as we've started our kernel. </p>
+<div class="highlight"><pre><span class="cm">/*</span>
+<span class="cm">kscrn_clear_screen</span>
+<span class="cm">Wipe everything displayed on the screen.</span>
+<span class="cm">*/</span>
+<span class="kt">void</span> <span class="nf">kscrn_clear_screen</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="n">video</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="o">*</span><span class="p">)</span><span class="n">VIDEO_MEM</span><span class="p">;</span>
+    <span class="c1">// set the video memory to blank</span>
+    <span class="n">memsetw</span><span class="p">(</span><span class="n">video</span><span class="p">,</span> <span class="mh">0x00</span><span class="p">,</span> <span class="mi">80</span> <span class="o">*</span> <span class="mi">25</span><span class="p">);</span>
+    <span class="n">kscrn_move_cursor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>This is a very simple function; we just blank out the video memory and set the cursor position to zero. The final function we need to write right now is one of the most useful: writing strings!</p>
+<div class="highlight"><pre><span class="cm">/*</span>
+<span class="cm">kscrn_write_string</span>
+<span class="cm">Write a string to the screen.</span>
+<span class="cm">*/</span>
+<span class="kt">void</span> <span class="nf">kscrn_write_string</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span><span class="n">i</span><span class="o">&lt;</span><span class="n">strlen</span><span class="p">(</span><span class="n">str</span><span class="p">);</span><span class="n">i</span><span class="o">++</span><span class="p">)</span>
+        <span class="n">kscrn_write_char</span><span class="p">(</span><span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Again, this is a very simple function. We just iterate over the string and write every character. We just need to write the <code>screen.h</code> file:</p>
+<div class="highlight"><pre><span class="cp">#ifndef KERN_SCREEN_H</span>
+<span class="cp">#define KERN_SCREEN_H</span>
+
+<span class="kt">void</span> <span class="nf">kscrn_clear_screen</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">kscrn_write_string</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">kscrn_write_char</span><span class="p">(</span><span class="kt">char</span> <span class="n">c</span><span class="p">,</span> <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">,</span> <span class="kt">int</span> <span class="n">page</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">kscrn_scroll</span><span class="p">();</span>
+<span class="kt">void</span> <span class="nf">kscrn_move_cursor</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">);</span>
+
+<span class="cp">#endif</span>
+</pre></div>
+
+
+<p>Now, all that's left to do is test it! Head over to <code>main.c</code>:</p>
+<div class="highlight"><pre><span class="cp">#include &quot;screen.h&quot;</span>
+<span class="cp">#include &quot;lib/hstd/string.h&quot;</span>
+
+<span class="k">extern</span> <span class="s">&quot;C&quot;</span> 
+<span class="kt">int</span> <span class="n">kernel</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">kscrn_clear_screen</span><span class="p">();</span>
+    <span class="n">kscrn_write_string</span><span class="p">(</span><span class="s">&quot;239 in hex: &quot;</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span>
+    <span class="n">stribase</span><span class="p">(</span><span class="mi">239</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+    <span class="n">kscrn_write_string</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">buf</span><span class="p">);</span>
+    <span class="n">kscrn_write_string</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">239 in decimal: &quot;</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">buf2</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span>
+    <span class="n">stri</span><span class="p">(</span><span class="mi">239</span><span class="p">,</span> <span class="n">buf2</span><span class="p">);</span>
+    <span class="n">kscrn_write_string</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">buf2</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>Here, we write the number 239 in hex and decimal. On screen, you should see two lines: "239 in hex: EF" and "239 in decimal: 239". If you see these, good job! If you don't leave a comment and I can try to help.</p>
+<p>Next up is the boring part: the GDT. This is part of the memory protection that protected mode offers, and we can't get much farther without it. Don't worry, eventually you'll have something cool to look at!</p>
+<p>As before, the code is available on <a href="https://github.com/cpancake/helios/tree/tut-3">GitHub</a>. And if you're fed up with waiting for me to write another part, just check out some of the cool articles over at <a href="http://osdev.org/">osdev.org</a>. </p>
+<p>Lastly, I should credit <a href="http://www.osdever.net/bkerndev/Docs/title.htm">bkerndev</a>, a kernel development tutorial simiar to this one (if a bit outdated). Though the code so far has been a mish-mash of many sources, the screen functions were mostly taken from here. Hey, everyone else does it.</p>
+  </div><!-- /.entry-content -->
+</section>
+    <div class="comment">
+        <div id="disqus_thread"></div> <!-- comment app container -->
+    </div>
+	<!-- Comment BEGIN -->
+    <script type="text/javascript">
+        var disqus_shortname = 'commiesprogblog'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+     <!-- Comment END -->
+            <footer id="contentinfo" class="footer">
+                    <nav class="pull-right bottom-nav">
+                        <a href="/None">RSS</a>
+                    </nav>
+                    <address id="about" class="vcard body">
+                    &copy; <a href="">andrew rogers: programming stuff</a> Proudly powered by <a href="http://getpelican.com/">Pelican</a>
+                    </address><!-- /#about -->
+            </footer><!-- /#contentinfo -->
+        </div><!-- container -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+	var pageTracker = _gat._getTracker("UA-51284727-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+    </body>
+</html>
