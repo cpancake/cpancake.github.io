@@ -94,7 +94,7 @@
 
 <p>First, you might notice that we're using the variable CC for compiler, LD for linker, etc. This is only to fit with convention, as I realized after I posted the last tutorial. Feel free to change the main Makefile to this convention, if you want, but you should be able to follow along just fine.</p>
 <p>Next, you might notice that this looks very similar to the Makefile for the OS, except for one key difference. After compiling the object files, we create an archive with the <code>ar</code> command, which can then be linked with the kernel to allow it to access this library's functions. We also specify the objects as <code>memory.o</code> and <code>string.o</code>, which are the components of this library that we'll be writing today.</p>
-<p>First, we need a header file that won't be linked with anything. Since we're using g++ to compile this, we need to export our functions in a way that languages that aren't using C++ naming conventions (like C and assembly) can understand. To do this, we create the file export.h<code>in the</code>hstd` directory:</p>
+<p>First, we need a header file that won't be linked with anything. Since we're using g++ to compile this, we need to export our functions in a way that languages that aren't using C++ naming conventions (like C and assembly) can understand. To do this, we create the file <code>export.h</code> in the <code>hstd</code> directory:</p>
 <div class="highlight"><pre><span class="cp">#define EXPORT extern &quot;C&quot;</span>
 </pre></div>
 

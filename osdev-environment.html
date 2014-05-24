@@ -153,6 +153,34 @@
 
 
 <p>It's simple and short. When you run <code>make</code> in the root directory, it will build and run your operating system. If you only need to run it, you can use <code>make run</code>. If you only need to build it, you can use <code>make build</code>.</p>
+<p>You'll also need to create a file called <code>link.ld</code> in the <code>src</code> directory. This will tell <code>ld</code> how to link the kernel together:</p>
+<div class="highlight"><pre><span class="n">ENTRY</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+<span class="n">phys</span> <span class="o">=</span> <span class="mh">0x00100000</span><span class="p">;</span>
+<span class="n">SECTIONS</span>
+<span class="p">{</span>
+  <span class="p">.</span><span class="n">text</span> <span class="n">phys</span> <span class="o">:</span> <span class="n">AT</span><span class="p">(</span><span class="n">phys</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="p">.;</span>
+    <span class="o">*</span><span class="p">(.</span><span class="n">text</span><span class="p">)</span>
+    <span class="o">*</span><span class="p">(.</span><span class="n">rodata</span><span class="p">)</span>
+    <span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4096</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="p">.</span><span class="n">data</span> <span class="o">:</span> <span class="n">AT</span><span class="p">(</span><span class="n">phys</span> <span class="o">+</span> <span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">code</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">.;</span>
+    <span class="o">*</span><span class="p">(.</span><span class="n">data</span><span class="p">)</span>
+    <span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4096</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="p">.</span><span class="n">bss</span> <span class="o">:</span> <span class="n">AT</span><span class="p">(</span><span class="n">phys</span> <span class="o">+</span> <span class="p">(</span><span class="n">bss</span> <span class="o">-</span> <span class="n">code</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">bss</span> <span class="o">=</span> <span class="p">.;</span>
+    <span class="o">*</span><span class="p">(.</span><span class="n">bss</span><span class="p">)</span>
+    <span class="p">.</span> <span class="o">=</span> <span class="n">ALIGN</span><span class="p">(</span><span class="mi">4096</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">end</span> <span class="o">=</span> <span class="p">.;</span>
+<span class="p">}</span>
+</pre></div>
+
+
 <p>Now, run the code via <code>make</code> (make sure you're running <code>make</code> via Cygwin). Press "start" in Bochs, press enter in GRUB, and then Bochs will hang. Don't worry, that's because we put in an infinite loop. Just press shutdown. The output console will display the registers when Bochs shutdown. Check the value of EAX, which is the return value of our C function. Is it <code>deadbeef</code>? If so, good job, your code is working! If your code doesn't work, take a look at the code on <a href="https://github.com/cpancake/helios/tree/tut-2">GitHub</a> and see if you've done something wrong.</p>
 <p>That's it for this tutorial. Next time, we'll get into displaying stuff on screen and other important bits. From this point on, all the code is available on <a href="http://github.com/cpancake/helios">GitHub</a>, so watch that repository if you want an update when I publish a new post. Until next time!</p>
   </div><!-- /.entry-content -->
