@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>OS Dev Part 4: Paging - andrew rogers: programming stuff</title>
+        <meta charset="utf-8" />
+        <link href="/theme/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="/theme/css/pygments.css" rel="stylesheet" />
+        <link href="/theme/css/style.css" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    </head>
+
+    <body id="index" class="archive">
+        <div class="container">
+            <div class="header">
+                <ul class="nav nav-pills pull-right">
+                    <li class=""><a href="/">Home</a></li>
+                    <li><a href="/archives.html">Archives</a></li>
+                </ul>
+                <h3 class="text-muted"><a href="/">andrew rogers: programming stuff</a></h3>
+				<h2 class="text-muted"></h2>
+             </div>
+<section id="content" class="article content">
+  <header>
+    <h2 class="entry-title">
+      <a href="/osdev-paging.html" rel="bookmark"
+         title="Permalink to OS Dev Part 4: Paging">OS Dev Part 4: Paging</a></h2>
+ 
+    <div class="post-info text-muted">
+      Posted on <abbr class="published" title="2014-05-30T19:13:00">
+        Fri 30 May 2014
+      </abbr>
+      <address class="vcard author">
+        by <a class="url fn" href="/author/cpancake.html">cpancake</a>
+      </address> in <a href="/category/posts.html">Posts</a> 
+      Tagged <a href="/tag/programming.html">programming </a><a href="/tag/osdev.html">osdev </a>    </div><!-- /.post-info -->
+  </header>
+     
+  <div class="entry-content">
+    <p>Remember how I said we're going to be talking about the GDT this time around? Well, I was going to. But then I came across <a href="http://rhett.weatherlight.com/2011/06/the-long-hard-road-out-of-segmentation/">this</a> article, and I changed my mind. Today, we're going to be talking about paging.</p>
+<h2>What is paging?</h2>
+<p>Paging is the modern way of handling memory. Back in the old system - the GDT - it used a system called segmentation. Basically, you'd tell the computer that some part of memory was the kernel's data, another part was the kernel's code, another part was user code, and another part was user data. That way, the user code couldn't conflict with the operating system. This works all fine and dandy, but what if you need  to run multiple processes? With only the GDT, multiple processes have the same memory space. If two programs both write to 0x300, one program will get the wrong data. This was previously solved with the LDT, but the modern way of doing it is with paging.</p>
+<p>Paging is assigning different "pages" - small sections of memory - to physical memory. When you run a program, you assign pages to that program.</p>
+  </div><!-- /.entry-content -->
+</section>
+    <div class="comment">
+        <div id="disqus_thread"></div> <!-- comment app container -->
+    </div>
+	<!-- Comment BEGIN -->
+    <script type="text/javascript">
+        var disqus_shortname = 'commiesprogblog'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+     <!-- Comment END -->
+            <footer id="contentinfo" class="footer">
+                    <nav class="pull-right bottom-nav">
+                        <a href="/None">RSS</a>
+                    </nav>
+                    <address id="about" class="vcard body">
+                    &copy; <a href="">andrew rogers: programming stuff</a> Proudly powered by <a href="http://getpelican.com/">Pelican</a>
+                    </address><!-- /#about -->
+            </footer><!-- /#contentinfo -->
+        </div><!-- container -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+	var pageTracker = _gat._getTracker("UA-51284727-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+    </body>
+</html>
