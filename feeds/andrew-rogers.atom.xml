@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>andrew rogers: programming stuff</title><link href="/" rel="alternate"></link><link href="/feeds%5Candrew-rogers.atom.xml" rel="self"></link><id>/</id><updated>2014-07-28T22:03:00-04:00</updated><entry><title>PSA: Node.js NPM Visual Studio Error</title><link href="/psa-node-error.html" rel="alternate"></link><updated>2014-07-28T22:03:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-07-28:psa-node-error.html</id><summary type="html">&lt;p&gt;If you are, like me, developing on Windows, and you, like me, have multiple versions of Visual Studio installed, you might see this error when a Node.js package needs to build something:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &amp;#39;v100&amp;#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &amp;quot;Upgrade Solution...&amp;quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is an annoying and unfortunately common error for me when installing packages through NPM. After scouring the internet, it turns out that this is an error with gyp, meaning that neither the NPM or node-gyp folks can fix it. However, you can pass a command line parameter to npm to specify what version to build with:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;npm install spotify-web -msvs_version=2013
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This parameter specifies what version of Visual Studio the library should build with. You can use any version, but I prefer the latest (2013).&lt;/p&gt;</summary><category term="programming"></category></entry><entry><title>OS Dev Part 3: Writing Text</title><link href="/osdev-screen.html" rel="alternate"></link><updated>2014-05-24T02:30:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-05-24:osdev-screen.html</id><summary type="html">&lt;p&gt;Now that we've set up the environment, the first step is writing text to the screen. This might seem odd - shouldn't we cover all the important bits first? Normally, you'd be right. You shouldn't write your UI first and your backend later. But since there's no way to log to the console in OS development, having a print function available as soon as possible can make things much less painful. Writing to the screen is also pretty straightforward. It's doing it right that gets complicated. Buckle up, this is going to be long.&lt;/p&gt;
+&lt;h2&gt;Real Mode and Protected Mode&lt;/h2&gt;
+&lt;p&gt;When your computer starts the operating system, it starts it in something called "real mode." This was the original mode that x86 processors ran in, but it's very limited. It's 16-bit, there's only 1MB of RAM available, and it's missing a lot of the "real" operating system features. However, since the Intel 80286 chip, we've had protected mode. This means that, not only do we have full, native access to RAM in 32-bit, we also have memory protection features. This means that you can set it up so that programs can only access the RAM they're given - essential to a real operating system. We'll be covering this later. While operating systems &lt;em&gt;have&lt;/em&gt; been written in real mode (MS-DOS, for one), it's not a fun experience. Thankfully, because we're using GRUB, we don't have to worry about it. GRUB launches us in protected mode (32-bit and full feature) already.&lt;/p&gt;
+&lt;p&gt;However, since we're in protected mode, we can't use any of the useful BIOS interrupts. Interrupts are what you use to tell a lower level component to do something - applications use interrupts to perform calls to the operating system, and the operating system (in real mode) uses interrupts to talk to the BIOS. But since we're in protected mode, we can't do this. This doesn't really make it more difficult (though it does, thankfully, save us from writing a bunch of assembly), but it might look different than some other "hello world" tutorials you've seen.&lt;/p&gt;
+&lt;h2&gt;Printing Without Interrupts&lt;/h2&gt;
+&lt;p&gt;To write to the screen, we'll be writing directly to video memory. Don't worry, pointers make this simple. However, there is one function that's necessary to the console that we can't do just by writing to memory: moving the cursor. To move the cursor, we have to write directly to the VGA controller. To do this, we use the &lt;code&gt;outb&lt;/code&gt; assembly instruction. This tells the CPU to write a value at a certain port we provide to it. The port we're writing to will let us change the cursor position. &lt;/p&gt;
+&lt;p&gt;Both the &lt;code&gt;outb&lt;/code&gt; and &lt;code&gt;inb&lt;/code&gt; instructions (writing out to a port and receiving from a port) are going to be implemented in inline assembly (because that seems to be the only way people do it, and I don't want to be unnecessarily confusing.) If you don't know, inline assembly is a certain syntax for writing assembly inside C and C++. It's ugly and unintelligible, but sometimes it's necessary. Create two new files:&lt;/p&gt;
+&lt;h4&gt;util.c&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;quot;util.h&amp;quot;&lt;/span&gt;
+
+&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="nf"&gt;kutil_inportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;asm&lt;/span&gt; &lt;span class="k"&gt;volatile&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;inb %%dx,%%al&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;=a&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;d&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;ret&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; 
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;asm&lt;/span&gt; &lt;span class="k"&gt;volatile&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;outb %%al,%%dx&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;d&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;a&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h4&gt;util.h&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#ifndef INLINE_UTIL_H&lt;/span&gt;
+&lt;span class="cp"&gt;#define INLINE_UTIL_H&lt;/span&gt;
+
+&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="nf"&gt;kutil_inportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;port&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+
+&lt;span class="cp"&gt;#endif&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here we define the two functions - &lt;code&gt;kutil_inportb&lt;/code&gt; for &lt;code&gt;inb&lt;/code&gt; and &lt;code&gt;kutil_outportb&lt;/code&gt; for &lt;code&gt;outb&lt;/code&gt;, and write a header file for them. This will allow us to include these functions in other files in this kernel. It includes a "header guard," which is a way to make sure the file doesn't get included multiple times (which can lead to problems). Also notice how our functions are prefixed with &lt;code&gt;kutil&lt;/code&gt;. All our kernel functions will be prefixed like this, with the "k" denoting that it's a kernel function and the part after to show which file it comes from. This makes it easy to tell which functions are kernel functions (and should not be used outside of the kernel, once we get to programs), and what file to look for them in if we need to debug it.&lt;/p&gt;
+&lt;h3&gt;libhstd&lt;/h3&gt;
+&lt;p&gt;In the course of writing this kernel, we are going to write a lot of stuff that isn't specific to the kernel (that is, we can safely use it in programs on the OS). Because of this, we'll be putting these functions in a library named libhstd - the Helios standard library. Create a directory named &lt;code&gt;lib&lt;/code&gt; in your &lt;code&gt;src&lt;/code&gt; folder, and another one named &lt;code&gt;hstd&lt;/code&gt; in that. Create a Makefile:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;OBJS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;memory.o string.o
+&lt;span class="nv"&gt;CC&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;i386-elf-g++
+&lt;span class="nv"&gt;LD&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;i386-elf-ld
+&lt;span class="nv"&gt;AR&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;i386-elf-ar
+
+&lt;span class="nf"&gt;all&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;hstd&lt;/span&gt;
+
+&lt;span class="nf"&gt;hstd&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;OBJS&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;$(&lt;/span&gt;AR&lt;span class="k"&gt;)&lt;/span&gt; rcs libhstd.a &lt;span class="k"&gt;$(&lt;/span&gt;OBJS&lt;span class="k"&gt;)&lt;/span&gt;
+
+&lt;span class="nf"&gt;%.o&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; %.&lt;span class="n"&gt;c&lt;/span&gt;
+    &lt;span class="k"&gt;$(&lt;/span&gt;CC&lt;span class="k"&gt;)&lt;/span&gt; -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fpermissive -fno-rtti -c &lt;span class="nv"&gt;$&amp;lt;&lt;/span&gt;
+
+&lt;span class="nf"&gt;clean&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    rm -rf *.o
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;First, you might notice that we're using the variable CC for compiler, LD for linker, etc. This is only to fit with convention, as I realized after I posted the last tutorial. Feel free to change the main Makefile to this convention, if you want, but you should be able to follow along just fine.&lt;/p&gt;
+&lt;p&gt;Next, you might notice that this looks very similar to the Makefile for the OS, except for one key difference. After compiling the object files, we create an archive with the &lt;code&gt;ar&lt;/code&gt; command, which can then be linked with the kernel to allow it to access this library's functions. We also specify the objects as &lt;code&gt;memory.o&lt;/code&gt; and &lt;code&gt;string.o&lt;/code&gt;, which are the components of this library that we'll be writing today.&lt;/p&gt;
+&lt;p&gt;First, we need a header file that won't be linked with anything. Since we're using g++ to compile this, we need to export our functions in a way that languages that aren't using C++ naming conventions (like C and assembly) can understand. To do this, we create the file &lt;code&gt;export.h&lt;/code&gt; in the &lt;code&gt;hstd&lt;/code&gt; directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#define EXPORT extern &amp;quot;C&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We will include this file in every library header, so that we can make sure that our functions are named correctly when exported. Next, we'll create the memory portion of the library:&lt;/p&gt;
+&lt;h4&gt;memory.c&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;quot;memory.h&amp;quot;&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;memcpy&lt;/span&gt;
+&lt;span class="cm"&gt;Copy count bytes from src to dest, and return dest.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memcpy&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;src&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;src_pointer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;src&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;src_pointer&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;memset&lt;/span&gt;
+&lt;span class="cm"&gt;Set count bytes in dest to val, and return dest.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;memsetw&lt;/span&gt;
+&lt;span class="cm"&gt;Set count bytes in dest to val, and return dest (but 16 bit this time).&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memsetw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest_pointer&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h4&gt;memory.h&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#ifndef HSTD_MEMORY_H&lt;/span&gt;
+&lt;span class="cp"&gt;#define HSTD_MEMORY_H&lt;/span&gt;
+
+&lt;span class="cp"&gt;#include &amp;quot;export.h&amp;quot;&lt;/span&gt;
+
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memcpy&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;src&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;memsetw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;dest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="n"&gt;val&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+
+&lt;span class="cp"&gt;#endif&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here, we define a few simple functions for copying and setting memory. &lt;code&gt;memcpy&lt;/code&gt; copies memory from one location to another. &lt;code&gt;memset&lt;/code&gt; and &lt;code&gt;memsetw&lt;/code&gt; set an entire block of memory to one value, though one takes a location as a char and the other takes the location as a short, respectively. Also notice that we use the EXPORT macro next to each definition.&lt;/p&gt;
+&lt;p&gt;Next, there's the string portion. This has some more complicated stuff, plus one function that I "stole" (though it was public domain) because I couldn't for the life of me write a string reversal function that didn't segfault. Hurray for me.&lt;/p&gt;
+&lt;h4&gt;string.c&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;quot;string.h&amp;quot;&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;strlen&lt;/span&gt;
+&lt;span class="cm"&gt;Measure length of str.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nf"&gt;strlen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;strrev&lt;/span&gt;
+&lt;span class="cm"&gt;Return a reversed representation of the string.&lt;/span&gt;
+&lt;span class="cm"&gt;http://www8.cs.umu.se/~isak/snippets/strrev.c&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="nf"&gt;strrev&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt; &lt;span class="n"&gt;str&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="o"&gt;!&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;p2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;strlen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;p2&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;p1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;p2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt; &lt;span class="o"&gt;^=&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p2&lt;/span&gt; &lt;span class="o"&gt;^=&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p1&lt;/span&gt; &lt;span class="o"&gt;^=&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;p2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Internally used for the next two functions&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;strtobase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;digits&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;0123456789ABCDEF&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="sc"&gt;&amp;#39;-&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="c1"&gt;// get each digit in the base we want it in - note that num % base returns the last digit, &lt;/span&gt;
+        &lt;span class="c1"&gt;// which is why we have to reverse the string.&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;digits&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+        &lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;while&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;output&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="sc"&gt;&amp;#39;\0&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;stribase&lt;/span&gt;
+&lt;span class="cm"&gt;Return a string from the given integer in the given base (up to base 16) to output.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;stribase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;strtobase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;base&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;output&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;strrev&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;stri&lt;/span&gt;
+&lt;span class="cm"&gt;Return a string from the given integer to output.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="n"&gt;EXPORT&lt;/span&gt; &lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;stri&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;strtobase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;num&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;output&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;strrev&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;output&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This defines a few functions that are going to be very useful to us. First, &lt;code&gt;strlen&lt;/code&gt; is obvious - it takes the length of a string by finding how many bytes are between the start and its null terminator (no, it doesn't work with unicode - but neither does the BIOS). &lt;code&gt;strrev&lt;/code&gt; takes a string and returns the reverse of it; pretty simple in concept, but I'm not really sure how this implementation works (but it works so hey). The last two are methods to convert a number to a string. The first one can convert a number to an arbitrary base between 1 and 16 (so, binary, decimal, octal, hexadecimal, etc), and the second one uses this function to provide an easier way to print numbers. &lt;/p&gt;
+&lt;p&gt;Now we can amend our OS Makefile (the one in the src directory) to build this library when we build the kernel. Just add this target:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nf"&gt;libs&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    &lt;span class="nb"&gt;cd &lt;/span&gt;lib/hstd &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; mv libhstd.a ../../
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This will build the library and move the binary to the src directory. Next, change your &lt;code&gt;all&lt;/code&gt; target:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nf"&gt;all&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;objects&lt;/span&gt; &lt;span class="n"&gt;libs&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt;
+    rm -rf *.o
+    mv kernel.bin ../disk/files/boot
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Of course, we're going to need to link this library with the kernel. So add this to the top of your makefile:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;LIBS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;libhstd.a
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;And change your &lt;code&gt;kernel&lt;/code&gt; target:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;LD&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt; &lt;span class="err"&gt;-T&lt;/span&gt; &lt;span class="err"&gt;link.ld&lt;/span&gt; &lt;span class="err"&gt;-o&lt;/span&gt; &lt;span class="err"&gt;kernel.bin&lt;/span&gt; &lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;OBJS&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt; &lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;LIBS&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;...and your &lt;code&gt;clean&lt;/code&gt; target, too:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nf"&gt;clean&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; 
+    rm -rf &lt;span class="k"&gt;$(&lt;/span&gt;OBJS&lt;span class="k"&gt;)&lt;/span&gt;
+    rm -rf &lt;span class="k"&gt;$(&lt;/span&gt;LIBS&lt;span class="k"&gt;)&lt;/span&gt;
+    rm -rf ../disk/files/boot/kernel.bin
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Great! Now you're ready to...actually do what you came to this post to do. Isn't organization great?&lt;/p&gt;
+&lt;h3&gt;Writing Text&lt;/h3&gt;
+&lt;p&gt;Create a file in your &lt;code&gt;src&lt;/code&gt; directory named &lt;code&gt;screen.c&lt;/code&gt;. We'll start by defining a few variables:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#define VIDEO_MEM 0xb8000&lt;/span&gt;
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;These are the cursor X and Y values. By incrementing them and calling a function to change the cursor location, we can move positions. In fact, that's the function we're going to write next:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;kscrn_move_cursor&lt;/span&gt;
+&lt;span class="cm"&gt;Move the hardware cursor to x, y.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;position&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+
+    &lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;    Since this is protected mode, we can&amp;#39;t use a BIOS interrupt to move the cursor.&lt;/span&gt;
+&lt;span class="cm"&gt;    Instead, we tell the VGA controller directly.&lt;/span&gt;
+&lt;span class="cm"&gt;    */&lt;/span&gt;
+    &lt;span class="n"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0x3d4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;14&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0x3d5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;position&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0x3d4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;15&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kutil_outportb&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0x3d5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;position&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+
+    &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Remember when I mentioned the VGA controller? Here, we write the position of the cursor (in characters - x + y * 80 is the amount of characters from 0 that the cursor is at) to the VGA controller. This will move our cursor position.&lt;/p&gt;
+&lt;p&gt;Now it's time to go over how we're going to write to the screen. At the location 0xB8000 (&lt;code&gt;VIDEO_MEM&lt;/code&gt;) is located the video RAM. In text mode (which we're in, by default), this is 80 by 25 by 2 bytes in size - 80 columns, 25 rows, and 2 bytes per character (one byte is the character, one byte is the color). Knowing this, we can write a simple "write character" function:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_write_char&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;VIDEO_MEM&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="c1"&gt;// navigate to cursor position&lt;/span&gt;
+    &lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="mh"&gt;0x07&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here, we create a pointer to the video memory, navigate to the cursor position (by incrementing the pointer by our cursor position), and write the character to it. This function isn't perfect, but we'll get back to that in a second. First, what does &lt;code&gt;c | 0x07 &amp;lt;&amp;lt; 8&lt;/code&gt; mean? &lt;code&gt;c&lt;/code&gt; is our character, so what we're doing is creating a short from the character byte and the color (white on black). &lt;/p&gt;
+&lt;p&gt;I mentioned this function isn't perfect, and it's not - far from it. It doesn't handle any special characters, or wrap around, or scroll. We can solve two of those three by updating the function:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_write_char&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mh"&gt;0x08&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// backspace&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="c1"&gt;// decrease cursor_x by one; if end of line, go to previous line; if first line, don&amp;#39;t do anything&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;79&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+            &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mh"&gt;0x09&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// tab&lt;/span&gt;
+        &lt;span class="c1"&gt;// increase to a multiple of four i.e. the next tab stop&lt;/span&gt;
+        &lt;span class="c1"&gt;// wondering how it works? don&amp;#39;t ask me, ask the guy who wrote bkerndev&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&lt;/span&gt; &lt;span class="o"&gt;~&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="sc"&gt;&amp;#39;\r&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// carriage return&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;// go to the start of the line&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="sc"&gt;&amp;#39;\n&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// newline&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;// go to the start of the line (\r)&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;// go to the next lien&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mh"&gt;0x20&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// space or higher; valid character&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;VIDEO_MEM&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="c1"&gt;// navigate to cursor position&lt;/span&gt;
+        &lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="mh"&gt;0x07&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// go to the next line if we&amp;#39;ve written past this one&lt;/span&gt;
+    &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+        &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_scroll&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here, we handle several common special characters. We also set ourselves up for handling scrolling by calling the function &lt;code&gt;kscrn_scroll&lt;/code&gt;. This is a simple function. Since we're working with raw video memory, all we have to do is move the memory 80 * 2 * lines bytes up, and we've scrolled the console. Place this above &lt;code&gt;kscrn_write_char&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;kscrn_scroll&lt;/span&gt;
+&lt;span class="cm"&gt;Move the window up a line if cursor_y &amp;gt; 25&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_scroll&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;blank&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mh"&gt;0x20&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mh"&gt;0x07&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;8&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;return&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;VIDEO_MEM&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="c1"&gt;// same as 25 - (cursor_y - 25 + 1) * 80 * 2&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;bottom&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;bottom&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;memcpy&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;bottom&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;video&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;count&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;memset&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;bottom&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;blank&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;cursor_y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;24&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cursor_x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cursor_y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now, we have to clear the screen. GRUB leaves some stuff on the screen after starting up, so we'll call this function as soon as we've started our kernel. &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;kscrn_clear_screen&lt;/span&gt;
+&lt;span class="cm"&gt;Wipe everything displayed on the screen.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_clear_screen&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;short&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;VIDEO_MEM&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+    &lt;span class="c1"&gt;// set the video memory to blank&lt;/span&gt;
+    &lt;span class="n"&gt;memsetw&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;video&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mh"&gt;0x00&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;80&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;25&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This is a very simple function; we just blank out the video memory and set the cursor position to zero. The final function we need to write right now is one of the most useful: writing strings!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cm"&gt;/*&lt;/span&gt;
+&lt;span class="cm"&gt;kscrn_write_string&lt;/span&gt;
+&lt;span class="cm"&gt;Write a string to the screen.&lt;/span&gt;
+&lt;span class="cm"&gt;*/&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;strlen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;kscrn_write_char&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;]);&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Again, this is a very simple function. We just iterate over the string and write every character. We just need to write the &lt;code&gt;screen.h&lt;/code&gt; file:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#ifndef KERN_SCREEN_H&lt;/span&gt;
+&lt;span class="cp"&gt;#define KERN_SCREEN_H&lt;/span&gt;
+
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_clear_screen&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;str&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_write_char&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;c&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;page&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_scroll&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+&lt;span class="kt"&gt;void&lt;/span&gt; &lt;span class="nf"&gt;kscrn_move_cursor&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+
+&lt;span class="cp"&gt;#endif&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now, all that's left to do is test it! Head over to &lt;code&gt;main.c&lt;/code&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="cp"&gt;#include &amp;quot;screen.h&amp;quot;&lt;/span&gt;
+&lt;span class="cp"&gt;#include &amp;quot;lib/hstd/string.h&amp;quot;&lt;/span&gt;
+
+&lt;span class="k"&gt;extern&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;C&amp;quot;&lt;/span&gt; 
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_clear_screen&lt;/span&gt;&lt;span class="p"&gt;();&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;239 in hex: &amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;buf&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="n"&gt;stribase&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;239&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;buf&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;buf&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s"&gt;239 in decimal: &amp;quot;&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="kt"&gt;unsigned&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="n"&gt;buf2&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="n"&gt;stri&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;239&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;buf2&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="n"&gt;kscrn_write_string&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;char&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;buf2&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here, we write the number 239 in hex and decimal. On screen, you should see two lines: "239 in hex: EF" and "239 in decimal: 239". If you see these, good job! If you don't leave a comment and I can try to help.&lt;/p&gt;
+&lt;p&gt;Next up is the boring part: the GDT. This is part of the memory protection that protected mode offers, and we can't get much farther without it. Don't worry, eventually you'll have something cool to look at!&lt;/p&gt;
+&lt;p&gt;As before, the code is available on &lt;a href="https://github.com/cpancake/helios/tree/tut-3"&gt;GitHub&lt;/a&gt;. And if you're fed up with waiting for me to write another part, just check out some of the cool articles over at &lt;a href="http://osdev.org/"&gt;osdev.org&lt;/a&gt;. &lt;/p&gt;
+&lt;p&gt;Lastly, I should credit &lt;a href="http://www.osdever.net/bkerndev/Docs/title.htm"&gt;bkerndev&lt;/a&gt;, a kernel development tutorial simiar to this one (if a bit outdated). Though the code so far has been a mish-mash of many sources, the screen functions were mostly taken from here. Hey, everyone else does it.&lt;/p&gt;</summary><category term="programming"></category><category term="osdev"></category></entry><entry><title>OS Dev Environment Setup</title><link href="/osdev-environment.html" rel="alternate"></link><updated>2014-05-22T21:07:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-05-22:osdev-environment.html</id><summary type="html">&lt;p&gt;&lt;a href="/osdev-gcc.html"&gt;Last post&lt;/a&gt;, I showed you how to cross-compile GCC for operating system development. Today, I'm going to get you all set up to write your own operating system, from scratch. We're going to be calling this example operating system "Helios", because it ends with OS.&lt;/p&gt;
+&lt;h2&gt;Preparation&lt;/h2&gt;
+&lt;p&gt;The most important tool here that you don't already have is &lt;a href="http://nasm.us/"&gt;NASM&lt;/a&gt;. NASM, or the Netwide Assembler, is key to operating system development. You can't write an operating system without writing some Assembly, and there's no better assembler than NASM. Download and install NASM (I recommend the installer, but you can do whatever as long as you put it in the PATH). &lt;/p&gt;
+&lt;p&gt;Another tool you're going to need is &lt;code&gt;mkisofs&lt;/code&gt;. This is a tool to make ISOs from binaries, and it's going to be used to generate the ISO we'll emulate from. You can install it from the Cygwin installer (you can just run it again and select other packages, it won't do any harm), or find one of the many unofficial Windows ports online. &lt;/p&gt;
+&lt;p&gt;The final tool you'll need is the emulator to test this. I recommend &lt;a href="http://bochs.sourceforge.net/"&gt;Bochs&lt;/a&gt;, and it's what I'll be using for the duration of this project. Download and run the installer, and then add the Bochs installation directory to your path (so that typing in &lt;code&gt;bochs&lt;/code&gt; launches the emulator; if you don't know how to do this, just leave a comment).&lt;/p&gt;
+&lt;p&gt;Now, create a directory to hold your project. I suggest having two folders inside - &lt;code&gt;disk&lt;/code&gt; and &lt;code&gt;src&lt;/code&gt;. Then, in the root of this folder, place a file called .bochsrc with the following in it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="n"&gt;ata0&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;enabled&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ioaddr1&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mh"&gt;0x1f0&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;ioaddr2&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mh"&gt;0x3f0&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;irq&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;14&lt;/span&gt;
+&lt;span class="n"&gt;ata0&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;master&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;type&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;cdrom&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;path&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;disk/helios.iso&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;,&lt;/span&gt; &lt;span class="n"&gt;status&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;inserted&lt;/span&gt;
+&lt;span class="n"&gt;boot&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;cdrom&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This file, when you launch bochs, will tell it to create a virtual CD drive from the ISO of our operating system, and to boot from it. This is vital.&lt;/p&gt;
+&lt;h2&gt;Basic OS&lt;/h2&gt;
+&lt;p&gt;This is an OS down to its simplest form. This will tell you if your setup works. In the src directory, create the file &lt;code&gt;boot.asm&lt;/code&gt;, with the following contents:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="c1"&gt;; Kernel&amp;#39;s entry point. &lt;/span&gt;
+&lt;span class="c1"&gt;; This is what GRUB calls when it hands control to the OS&lt;/span&gt;
+&lt;span class="err"&gt;[&lt;/span&gt;&lt;span class="k"&gt;BITS&lt;/span&gt; &lt;span class="mi"&gt;32&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="nv"&gt;start&lt;/span&gt;
+&lt;span class="nl"&gt;start:&lt;/span&gt;
+    &lt;span class="nf"&gt;mov&lt;/span&gt; &lt;span class="nb"&gt;esp&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;_sys_stack&lt;/span&gt; &lt;span class="c1"&gt;; Set the stack pointer to point to the top of our stack.&lt;/span&gt;
+    &lt;span class="nf"&gt;jmp&lt;/span&gt; &lt;span class="nv"&gt;stublet&lt;/span&gt;
+
+&lt;span class="c1"&gt;; The multiboot header. GRUB looks for this before it boots the OS.&lt;/span&gt;
+&lt;span class="k"&gt;ALIGN&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;
+&lt;span class="nl"&gt;mboot:&lt;/span&gt;
+    &lt;span class="no"&gt;MULTIBOOT_PAGE_ALIGN&lt;/span&gt;&lt;span class="kd"&gt;    equ&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;
+    &lt;span class="no"&gt;MULTIBOOT_MEMORY_INFO&lt;/span&gt;&lt;span class="kd"&gt;   equ&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="o"&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;
+    &lt;span class="no"&gt;MULTIBOOT_HEADER_MAGIC&lt;/span&gt;&lt;span class="kd"&gt;  equ&lt;/span&gt; &lt;span class="mh"&gt;0x1BADB002&lt;/span&gt;
+    &lt;span class="no"&gt;MULTIBOOT_HEADER_FLAGS&lt;/span&gt;&lt;span class="kd"&gt;  equ&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_PAGE_ALIGN&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_MEMORY_INFO&lt;/span&gt;
+    &lt;span class="no"&gt;MULTIBOOT_CHECKSUM&lt;/span&gt;&lt;span class="kd"&gt;  equ&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;MULTIBOOT_HEADER_MAGIC&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_HEADER_FLAGS&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="kd"&gt;dd&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_HEADER_MAGIC&lt;/span&gt;
+    &lt;span class="kd"&gt;dd&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_HEADER_FLAGS&lt;/span&gt;
+    &lt;span class="kd"&gt;dd&lt;/span&gt; &lt;span class="nv"&gt;MULTIBOOT_CHECKSUM&lt;/span&gt;
+
+&lt;span class="c1"&gt;; Call the kernel, then enter an infinite loop.&lt;/span&gt;
+&lt;span class="nl"&gt;stublet:&lt;/span&gt;
+    &lt;span class="k"&gt;extern&lt;/span&gt; &lt;span class="nv"&gt;kernel&lt;/span&gt;
+    &lt;span class="nf"&gt;call&lt;/span&gt; &lt;span class="nv"&gt;kernel&lt;/span&gt;
+    &lt;span class="nf"&gt;jmp&lt;/span&gt; &lt;span class="kc"&gt;$&lt;/span&gt; &lt;span class="c1"&gt;; Infinite loop&lt;/span&gt;
+
+&lt;span class="k"&gt;SECTION&lt;/span&gt; &lt;span class="nv"&gt;.bss&lt;/span&gt;
+    &lt;span class="kd"&gt;resb&lt;/span&gt; &lt;span class="mi"&gt;8192&lt;/span&gt;
+&lt;span class="nl"&gt;_sys_stack:&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Theres a few comments in this file, but most of it is GRUB specific stuff. Basically, we're telling GRUB "Hey, we're an operating system, feel free to boot us!" It also initializes the stack and points the stack pointer to it, and calls our kernel. But where is this kernel defined? We use an &lt;code&gt;extern&lt;/code&gt; statement to tell the compiler that it shouldn't complain when it doesn't exist. Then, we define the &lt;code&gt;kernel&lt;/code&gt; function in a C file. Name it &lt;code&gt;main.c&lt;/code&gt; and put this in it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="k"&gt;extern&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;C&amp;quot;&lt;/span&gt; 
+&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mh"&gt;0xDEADBEEF&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This just returns "DEADBEEF" when called. You'll see why when we run it. But why the &lt;code&gt;extern&lt;/code&gt; statement here? Technically, we're using G++ for this, which &lt;a href="http://en.wikipedia.org/wiki/Name_mangling"&gt;mangles&lt;/a&gt; the names of its functions when compiled. To be able to call this from assembly reliably, we have to tell G++ that it's a C function and shouldn't be messed with. Keep in mind that, even though we're writing this in C, you don't have access to &lt;em&gt;any&lt;/em&gt; of the C standard library. We'll need to implement everything ourselves. &lt;/p&gt;
+&lt;h2&gt;Compiling&lt;/h2&gt;
+&lt;p&gt;We're going to use Makefiles to compile this, because they're really useful and are much less ugly than batch files. First, create a Makefile in the src directory:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nv"&gt;OBJS&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;main.o boot.o
+&lt;span class="nv"&gt;OUT&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;kernel.bin
+
+&lt;span class="nf"&gt;all&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;objects&lt;/span&gt; &lt;span class="n"&gt;kernel&lt;/span&gt;
+    rm -rf *.o
+    mv kernel.bin ../disk/files/boot
+
+&lt;span class="nf"&gt;objects&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="k"&gt;$(&lt;/span&gt;&lt;span class="nv"&gt;OBJS&lt;/span&gt;&lt;span class="k"&gt;)&lt;/span&gt;
+
+&lt;span class="nf"&gt;%.o&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; %.&lt;span class="n"&gt;asm&lt;/span&gt;
+    nasm -felf &lt;span class="nv"&gt;$&amp;lt;&lt;/span&gt; -o &lt;span class="nv"&gt;$@&lt;/span&gt;
+
+&lt;span class="nf"&gt;%.o&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; %.&lt;span class="n"&gt;c&lt;/span&gt;
+    i386-elf-g++ -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti -c &lt;span class="nv"&gt;$&amp;lt;&lt;/span&gt;
+
+&lt;span class="nf"&gt;kernel&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; 
+    i386-elf-ld -T link.ld -o kernel.bin &lt;span class="k"&gt;$(&lt;/span&gt;OBJS&lt;span class="k"&gt;)&lt;/span&gt;
+
+&lt;span class="nf"&gt;clean&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; 
+    rm -rf &lt;span class="k"&gt;$(&lt;/span&gt;OBJS&lt;span class="k"&gt;)&lt;/span&gt;
+    rm -rf ../disk/files/boot/kernel.bin
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;If you don't understand this, you should probably read up on how Makefiles work (because they're &lt;em&gt;really&lt;/em&gt; useful), but it's actually pretty simple. We define what objects we need compied (main.o and boot.o), how to compile them based on the source file (main.c is compiled with G++, while boot.asm is compiled with NASM), and then we tell it how to link them together and create a binary for our operating system. We can also run &lt;code&gt;make clean&lt;/code&gt; to delete all the binaries we've already compiled and start fresh.&lt;/p&gt;
+&lt;h2&gt;GRUB and ISOs&lt;/h2&gt;
+&lt;p&gt;This Makefile isn't complete yet, however. First, the directory &lt;code&gt;../disk/files/boot&lt;/code&gt; doesn't exist yet. Second, there's no way to create the ISO. We'll solve these together. First, you'll need to create the directory &lt;code&gt;files&lt;/code&gt; inside &lt;code&gt;disk&lt;/code&gt;, &lt;code&gt;boot&lt;/code&gt; inside of that, and &lt;code&gt;grub&lt;/code&gt; inside of that. Then, place the file &lt;code&gt;menu.lst&lt;/code&gt; in the &lt;code&gt;grub&lt;/code&gt; directory, and put this in it:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;default 0
+
+title Helios
+kernel /boot/kernel.bin
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This will tell GRUB which operating system to start. We tell it to start /boot/kernel.bin, because the root of our ISO is going to be &lt;code&gt;disk/files&lt;/code&gt;, and kernel.bin will be in the &lt;code&gt;boot&lt;/code&gt; directory. You'll also need to put &lt;a href="https://code.google.com/p/arabos/downloads/detail?name=stage2_eltorito"&gt;this&lt;/a&gt; file in the &lt;code&gt;grub&lt;/code&gt; directory. This is GRUB itself, and we will use it to create the ISO.&lt;/p&gt;
+&lt;p&gt;Now, remember how we installed &lt;code&gt;mkisofs&lt;/code&gt; back in the beginning? Here's why. Add this to the end of your Makefile:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nf"&gt;iso&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt;
+    mkisofs -R -b boot/grub/stage2_eltorito -no-emul-boot &lt;span class="se"&gt;\&lt;/span&gt;
+            -boot-load-size &lt;span class="m"&gt;4&lt;/span&gt; -boot-info-table -V HELIOS &lt;span class="se"&gt;\&lt;/span&gt;
+            -quiet -o ../disk/helios.iso ../disk/files
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This can be broken down into its arguments. &lt;code&gt;-R&lt;/code&gt; tells &lt;code&gt;mkisofs&lt;/code&gt; to create the ISO with &lt;a href="http://en.wikipedia.org/wiki/Rock_Ridge"&gt;Rock Ridge&lt;/a&gt; directory information; &lt;code&gt;-b&lt;/code&gt; tells it to boot from &lt;code&gt;stage2_eltorito&lt;/code&gt; (which is GRUB); &lt;code&gt;-no-emul-boot&lt;/code&gt; tells it to boot from the GRUB image we provided; &lt;code&gt;-boot-load-size 4&lt;/code&gt; tells it that the BIOS should load 2048 bytes of the ISO when booting from it (four 512-byte sectors); &lt;code&gt;-boot-info-table&lt;/code&gt; tells GRUB a little bit about the ISO it's booting; &lt;code&gt;-V HELIOS&lt;/code&gt; sets the label of the ISO to &lt;code&gt;HELIOS&lt;/code&gt;, &lt;code&gt;-quiet&lt;/code&gt; tells it not to say anything unless something goes wrong; &lt;code&gt;-o ../disk/helios.iso&lt;/code&gt; tells it where to output the ISO, and &lt;code&gt;../disk/files&lt;/code&gt; tells it to make the ISO from the files contained there. Now, when you run &lt;code&gt;make iso&lt;/code&gt;, an ISO will be created in &lt;code&gt;disk&lt;/code&gt;. Are we done? Not quite.&lt;/p&gt;
+&lt;h2&gt;Bringing It All Together&lt;/h2&gt;
+&lt;p&gt;We'll also create a Makefile in the root of our directory to help automate the process. Here's what's contained in mine:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nf"&gt;all&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;build&lt;/span&gt; &lt;span class="n"&gt;run&lt;/span&gt;
+
+&lt;span class="nf"&gt;build&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; 
+    &lt;span class="nb"&gt;cd &lt;/span&gt;src &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; make iso &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="nb"&gt;cd&lt;/span&gt; ..
+
+&lt;span class="nf"&gt;run&lt;/span&gt;&lt;span class="o"&gt;:&lt;/span&gt; 
+    bochs -f .bochsrc
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;It's simple and short. When you run &lt;code&gt;make&lt;/code&gt; in the root directory, it will build and run your operating system. If you only need to run it, you can use &lt;code&gt;make run&lt;/code&gt;. If you only need to build it, you can use &lt;code&gt;make build&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;You'll also need to create a file called &lt;code&gt;link.ld&lt;/code&gt; in the &lt;code&gt;src&lt;/code&gt; directory. This will tell &lt;code&gt;ld&lt;/code&gt; how to link the kernel together:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;ENTRY(start)
+phys = 0x00100000;
+SECTIONS
+{
+  .text phys : AT(phys) {
+    code = .;
+    *(.text)
+    *(.rodata)
+    . = ALIGN(4096);
+  }
+  .data : AT(phys + (data - code))
+  {
+    data = .;
+    *(.data)
+    . = ALIGN(4096);
+  }
+  .bss : AT(phys + (bss - code))
+  {
+    bss = .;
+    *(.bss)
+    . = ALIGN(4096);
+  }
+  end = .;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Now, run the code via &lt;code&gt;make&lt;/code&gt; (make sure you're running &lt;code&gt;make&lt;/code&gt; via Cygwin). Press "start" in Bochs, press enter in GRUB, and then Bochs will hang. Don't worry, that's because we put in an infinite loop. Just press shutdown. The output console will display the registers when Bochs shutdown. Check the value of EAX, which is the return value of our C function. Is it &lt;code&gt;deadbeef&lt;/code&gt;? If so, good job, your code is working! If your code doesn't work, take a look at the code on &lt;a href="https://github.com/cpancake/helios/tree/tut-2"&gt;GitHub&lt;/a&gt; and see if you've done something wrong.&lt;/p&gt;
+&lt;p&gt;That's it for this tutorial. Next time, we'll get into displaying stuff on screen and other important bits. From this point on, all the code is available on &lt;a href="http://github.com/cpancake/helios"&gt;GitHub&lt;/a&gt;, so watch that repository if you want an update when I publish a new post. Until next time!&lt;/p&gt;</summary><category term="programming"></category><category term="osdev"></category></entry><entry><title>Cross-compiling GCC for OS Development</title><link href="/osdev-gcc.html" rel="alternate"></link><updated>2014-05-22T17:47:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-05-22:osdev-gcc.html</id><summary type="html">&lt;p&gt;I'm going to be writing some articles about operating system development, because it seems that most of the tutorials available are either outdated or incomplete. For the first part, I'm going to be going over how to compile your OS. This was adapted from the &lt;a href="http://wiki.osdev.org/GCC_Cross-Compiler"&gt;osdev.org&lt;/a&gt; guide.&lt;/p&gt;
+&lt;p&gt;To compile an operating system, a linker is needed. The usual choice for this is GCC's linker, but it needs some work before you can use it for operating system development. That's because GCC, by default, compiles for the native operating system (Windows EXEs on Windows, Linux ELF files on Linux). To compile operating systems, we must recompile GCC for platform-less ELF files, like a kernel. This is simple, but it takes a while.&lt;/p&gt;
+&lt;h2&gt;Preparation&lt;/h2&gt;
+&lt;p&gt;First, if you're on Windows, you need to install Cygwin. It's likely possible to build GCC on normal Windows, but it's much easier to do it on Cygwin. &lt;a href="https://cygwin.com/install.html"&gt;Download&lt;/a&gt; and install Cygwin, and stop at the package installation screen. Make sure you install these packages:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;gcc-core&lt;/li&gt;
+&lt;li&gt;gcc-g++&lt;/li&gt;
+&lt;li&gt;make&lt;/li&gt;
+&lt;li&gt;bison&lt;/li&gt;
+&lt;li&gt;flex&lt;/li&gt;
+&lt;li&gt;gmp and libgmp-devel&lt;/li&gt;
+&lt;li&gt;mpfr and libmpfr-devel&lt;/li&gt;
+&lt;li&gt;mpclib and libmpc-devel&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Next, you'll need to download the GCC sources. Download binutils &lt;a href="http://ftp.gnu.org/gnu/binutils/binutils-2.24.tar.gz"&gt;here&lt;/a&gt;, and gcc &lt;a href="http://ftp.gnu.org/gnu/gcc/gcc-4.9.0/gcc-4.9.0.tar.gz"&gt;here&lt;/a&gt;. Extract them to your Cygwin home folder (mine is &lt;code&gt;C:\cygwin64\home\Andrew&lt;/code&gt;, though you'll need to start up Cygwin once to create this directory). &lt;/p&gt;
+&lt;h2&gt;Compiling&lt;/h2&gt;
+&lt;p&gt;After you've installed Cygwin and downloaded the sources, &lt;code&gt;cd&lt;/code&gt; to your home directory. Then, you'll need to setup some environment variables:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span class="nb"&gt;export &lt;/span&gt;&lt;span class="nv"&gt;PREFIX&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$HOME&lt;/span&gt;&lt;span class="s2"&gt;/opt/cross&amp;quot;&lt;/span&gt;
+&lt;span class="nb"&gt;export &lt;/span&gt;&lt;span class="nv"&gt;TARGET&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;i386-elf
+&lt;span class="nb"&gt;export &lt;/span&gt;&lt;span class="nv"&gt;PATH&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$PREFIX&lt;/span&gt;&lt;span class="s2"&gt;/bin:&lt;/span&gt;&lt;span class="nv"&gt;$PATH&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;PREFIX&lt;/code&gt; defines the location that the compiled binaries will be installed. &lt;code&gt;TARGET&lt;/code&gt; defines the platform that you want to compile for - in this case, 32-bit ELF. We also add the installation directory to the &lt;code&gt;PATH&lt;/code&gt;, so that the compiled libraries will be available when we compile gcc.&lt;/p&gt;
+&lt;h2&gt;binutils&lt;/h2&gt;
+&lt;p&gt;First, we make a directory to install binutils into:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;mkdir build
+&lt;span class="nb"&gt;cd &lt;/span&gt;build
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then, we configure binutils.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;../binutils-2.24/configure --target&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$TARGET&lt;/span&gt; --prefix&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$PREFIX&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; --disable-nls --disable-werror
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;This should create a &lt;code&gt;Makefile&lt;/code&gt;. If it doesn't, leave a comment with the error or ask on StackOverflow.&lt;/p&gt;
+&lt;p&gt;Next, we should compile and install binutils:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;make
+make install
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Finally, clear the build directory so we can use it for GCC:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;rm -rf *
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;gcc&lt;/h2&gt;
+&lt;p&gt;Configure gcc the same way:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;../gcc-4.9.0/configure --target&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="nv"&gt;$TARGET&lt;/span&gt; --prefix&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="nv"&gt;$PREFIX&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt; --disable-nls --enable-languages&lt;span class="o"&gt;=&lt;/span&gt;c,c++ --without-headers
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Then, we build gcc:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;make all-gcc
+make all-target-libgcc
+make install-gcc
+make install-target-libgcc
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You now have a cross-compiled GCC build. The binaries are in &lt;code&gt;~/opt/cross&lt;/code&gt;, which you can add to your Windows path so that you can use it without prefixing it with the directory.&lt;/p&gt;
+&lt;p&gt;Next post I'll be covering how to setup an OS development environment and compile a simple kernel using GRUB.&lt;/p&gt;</summary><category term="programming"></category><category term="osdev"></category></entry><entry><title>Why I Hate the GPL</title><link href="/why-i-hate-the-gpl.html" rel="alternate"></link><updated>2014-04-24T01:14:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-04-24:why-i-hate-the-gpl.html</id><summary type="html">&lt;p&gt;I don't like the GPL. You might've guessed this from the title, but I have a good reason for this. I see a lot of GPL advocates using the "&lt;a href="https://github.com/gabrielecirulli/2048/issues/133"&gt;freedom&lt;/a&gt;" argument. But the GPL isn't truly free. And here's why.&lt;/p&gt;
+&lt;p&gt;First off: the GPL is GNU free. A truly free license would be public domain. You can do anything you want, and there aren't any arbitrary rules to stop you. That's true freedom, not GNU freedom. The ability to do whatever you want. The GPL doesn't let you do whatever you want. If you use a GPL'd library, you have to GPL your code. If you use a GPL'd base for your code, you have to GPL your entire project. Every time I get in a GPL argument (it happens from time to time), the response is always "yeah, but there's different kinds of freedom" or "freedom isn't anarchy." Well, yes, literally, freedom means the ability to do whatever you want without restraint. But yet GPL advocates shout "FREEDOM" at the top of their lungs to argue for GPLing code. Why? Why even use the word "freedom" if you need to quantify how much freedom you actually mean? Would it be a better idea to shout "FREEDOM according to the rules determined by the Free Software Foundation?"&lt;/p&gt;
+&lt;p&gt;Another argument I've heard is "the MIT license allows you to take someone else's code and sell it!" Well, strictly speaking, it does. But there's two things to look at here: is it really an issue, and does it matter? By "is it an issue," I mean "if people steal your code and sell it for money, &lt;em&gt;who does it harm&lt;/em&gt;?" The seemingly obvious answer would be you, but keep in mind you weren't expecting any income from this code in the first place. You said "here, take this code and distribute it to anyone you want. I don't care about money." You can't then say "but if &lt;em&gt;you&lt;/em&gt; make money off of this, then I should be making money off of this too." You had the ability to sell it, and you didn't. You gave up that ability, so don't complain that you don't have it anymore.  It doesn't hurt the consumer either, which I'll explain soon. The second issue is "does it matter," and it doesn't. Plain and simple. If someone sells your code, that doesn't make your code any less open source. People can still download and use your code for free, and under your terms, so why does it matter that someone else is selling it? It doesn't hurt the consumer, either, like some people on the 2048 issue tracker seem to think (see top). A consumer who buys a proprietary library that is identical to yours is an idiot. They're buying a software library on impulse, which is incredible considering there is a free and open source library for almost anything you want to do. Why would you ever buy something without looking for free alternatives? &lt;/p&gt;
+&lt;p&gt;This brings me to my next point: if the consumer does buy the other library, and yet still came across your library in their search, they bought the proprietary one because it had better features. If someone improves your code and sells it, that's their right. I don't see anything wrong with doing that. If their code isn't open source, that's their choice. If they're not choosing to open source their code, you shouldn't force them to. And that's what the GPL does. It forces people to open source their code, and that's stupid. It's especially bad when you use it in a library, but even in an application; forcibly free software only prevents innovation (many innovations are created in the pursuit of financial gain). &lt;/p&gt;
+&lt;p&gt;And now for my last, simple point: the kind of person who is taking your MIT licensed code and selling it, unmodified, without even acknowledging the original author is not the kind of person who is going to respect your GPL license. Scumbags will steal whether it's legal or not; good programmers will respect your code whether it's forced or not. Don't use the GPL. If you must, use the MPL, but the MIT license is a much better choice. Don't force people to be GNU free.&lt;/p&gt;</summary><category term="programming"></category><category term="gpl"></category></entry></feed>

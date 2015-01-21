@@ -1,40 +1,42 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Why I hate the GPL. - andrew rogers: programming stuff</title>
+<html lang="en">
+<head>
+          <title>andrew rogers: programming stuff</title>
         <meta charset="utf-8" />
-        <link href="/theme/css/bootstrap.min.css" rel="stylesheet" />
-        <link href="/theme/css/pygments.css" rel="stylesheet" />
-        <link href="/theme/css/style.css" rel="stylesheet" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    </head>
+        <link href='http://fonts.googleapis.com/css?family=Montserrat:700|Roboto+Condensed:400italic,400,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="/theme/css/bootstrap.min.css?698b47d4">
+        <link rel="stylesheet" href="/theme/css/style.min.css?4f87944c">
 
-    <body id="index" class="archive">
-        <div class="container">
-            <div class="header">
-                <ul class="nav nav-pills pull-right">
-                    <li class=""><a href="/">Home</a></li>
-                    <li><a href="/archives.html">Archives</a></li>
-                </ul>
-                <h3 class="text-muted"><a href="/">andrew rogers: programming stuff</a></h3>
-				<h2 class="text-muted"></h2>
-             </div>
-<section id="content" class="article content">
+
+
+    <meta name="tags" contents="programming" />
+    <meta name="tags" contents="gpl" />
+
+</head>
+
+<body id="index" class="home">
+    <header id="banner" class="body">
+            <h1><a class="uilink" href="/">andrew rogers: programming stuff <strong></strong></a></h1>
+    </header><!-- /#banner -->
+    <nav id="menu">
+        <ul>
+            <li><a class="uilink" href="/">Home</a></li>
+            <li><a class="uilink" href="http://github.com/cpancake">GitHub</a></li>
+            <li><a class="uilink" href="https://twitter.com/_cpancake">Twitter</a></li>
+        </ul>
+    </nav><!-- /#menu -->
+    <div class="container main-container">
+<section id="content" class="body">
   <header>
-    <h2 class="entry-title">
-      <a href="/why-i-hate-the-gpl.html" rel="bookmark"
-         title="Permalink to Why I hate the GPL.">Why I hate the GPL.</a></h2>
+    <h2 class="entry-title">Why I Hate the GPL</h2>
  
-    <div class="post-info text-muted">
-      Posted on <abbr class="published" title="2014-04-24T01:14:00">
-        Thu 24 April 2014
-      </abbr>
-      <address class="vcard author">
-        by <a class="url fn" href="/author/cpancake.html">cpancake</a>
-      </address> in <a href="/category/posts.html">Posts</a> 
-      Tagged <a href="/tag/programming.html">programming </a><a href="/tag/gpl.html">gpl </a>    </div><!-- /.post-info -->
   </header>
-     
+  <footer class="post-info">
+    <abbr class="published" title="2014-04-24T01:14:00-04:00">Thu 24 April 2014</abbr>
+    <address class="vcard author">
+      by           <a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+    </address>
+  </footer><!-- /.post-info -->
   <div class="entry-content">
     <p>I don't like the GPL. You might've guessed this from the title, but I have a good reason for this. I see a lot of GPL advocates using the "<a href="https://github.com/gabrielecirulli/2048/issues/133">freedom</a>" argument. But the GPL isn't truly free. And here's why.</p>
 <p>First off: the GPL is GNU free. A truly free license would be public domain. You can do anything you want, and there aren't any arbitrary rules to stop you. That's true freedom, not GNU freedom. The ability to do whatever you want. The GPL doesn't let you do whatever you want. If you use a GPL'd library, you have to GPL your code. If you use a GPL'd base for your code, you have to GPL your entire project. Every time I get in a GPL argument (it happens from time to time), the response is always "yeah, but there's different kinds of freedom" or "freedom isn't anarchy." Well, yes, literally, freedom means the ability to do whatever you want without restraint. But yet GPL advocates shout "FREEDOM" at the top of their lungs to argue for GPLing code. Why? Why even use the word "freedom" if you need to quantify how much freedom you actually mean? Would it be a better idea to shout "FREEDOM according to the rules determined by the Free Software Foundation?"</p>
@@ -43,39 +45,37 @@
 <p>And now for my last, simple point: the kind of person who is taking your MIT licensed code and selling it, unmodified, without even acknowledging the original author is not the kind of person who is going to respect your GPL license. Scumbags will steal whether it's legal or not; good programmers will respect your code whether it's forced or not. Don't use the GPL. If you must, use the MPL, but the MIT license is a much better choice. Don't force people to be GNU free.</p>
   </div><!-- /.entry-content -->
 </section>
-    <div class="comment">
-        <div id="disqus_thread"></div> <!-- comment app container -->
-    </div>
-	<!-- Comment BEGIN -->
-    <script type="text/javascript">
-        var disqus_shortname = 'commiesprogblog'; // required: replace example with your forum shortname
 
-        /* * * DON'T EDIT BELOW THIS LINE * * */
-        (function() {
-            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-        })();
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-     <!-- Comment END -->
-            <footer id="contentinfo" class="footer">
-                    <nav class="pull-right bottom-nav">
-                        <a href="/None">RSS</a>
-                    </nav>
-                    <address id="about" class="vcard body">
-                    &copy; <a href="">andrew rogers: programming stuff</a> Proudly powered by <a href="http://getpelican.com/">Pelican</a>
-                    </address><!-- /#about -->
-            </footer><!-- /#contentinfo -->
-        </div><!-- container -->
+<div id="disqus_thread"></div>
 <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_title = 'Why I Hate the GPL';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
 </script>
-<script type="text/javascript">
-try {
-	var pageTracker = _gat._getTracker("UA-51284727-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-    </body>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    <footer id="contentinfo" class="body container">
+        <address id="about" class="vcard body">
+            <p>
+                Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">anime-nigh</span>t.com</span>
+            </p>
+            <p>
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+            </p>
+        </address><!-- /#about -->
+    </footer><!-- /#contentinfo -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', UA-51284727-1, 'cpancake.github.io');
+        ga('send', 'pageview');
+    </script>
+</body>
 </html>

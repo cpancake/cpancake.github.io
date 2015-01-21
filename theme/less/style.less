@@ -1,0 +1,89 @@
+@import (reference) "bootstrap/variables.less";
+@import "monokai.less";
+
+body
+{
+	background: @body-bg;
+	color: #fff;
+}
+
+header
+{
+	font-family: @font-family-header;
+	width: 100%;
+}
+header#banner
+{
+	text-align: center;
+}
+
+.uilink
+{
+	color: #fff;
+}
+.uilink:hover
+{
+	text-decoration: none;
+	color: darken(#fff, 20%);
+}
+
+.container.main-container
+{
+	background: @main-section-bg;
+	color: @text-color;
+	padding: 20px;
+}
+
+nav#menu
+{
+	text-align: center;
+}
+
+nav#menu li
+{
+	font-family: @font-family-header;
+	font-weight: bold;
+	display: inline;
+	padding: 20px;
+	font-size: 16pt;
+}
+
+footer#contentinfo
+{
+	padding-top: 20px;
+}
+
+.email-obscure
+{
+	display: none;
+}
+
+.hentry header h2
+{
+	display: inline;
+}
+
+.hentry header h2 a:hover
+{
+	text-decoration: none;
+}
+
+header .published
+{
+	margin-left: 10px;
+}
+
+.entry-title
+{
+	margin: 0;
+}
+
+.vcard.author
+{
+	display: inline;
+}
+
+.entry-content
+{
+	padding-top: 10px;
+}

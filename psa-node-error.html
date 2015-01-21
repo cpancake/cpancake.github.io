@@ -1,87 +1,86 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>PSA: Node.js NPM Visual Studio Error - andrew rogers: programming stuff</title>
+<html lang="en">
+<head>
+          <title>andrew rogers: programming stuff</title>
         <meta charset="utf-8" />
-        <link href="/theme/css/bootstrap.min.css" rel="stylesheet" />
-        <link href="/theme/css/pygments.css" rel="stylesheet" />
-        <link href="/theme/css/style.css" rel="stylesheet" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    </head>
+        <link href='http://fonts.googleapis.com/css?family=Montserrat:700|Roboto+Condensed:400italic,400,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="/theme/css/bootstrap.min.css?698b47d4">
+        <link rel="stylesheet" href="/theme/css/style.min.css?4f87944c">
 
-    <body id="index" class="archive">
-        <div class="container">
-            <div class="header">
-                <ul class="nav nav-pills pull-right">
-                    <li class=""><a href="/">Home</a></li>
-                    <li><a href="/archives.html">Archives</a></li>
-                </ul>
-                <h3 class="text-muted"><a href="/">andrew rogers: programming stuff</a></h3>
-				<h2 class="text-muted"></h2>
-             </div>
-<section id="content" class="article content">
+
+
+    <meta name="tags" contents="programming" />
+
+</head>
+
+<body id="index" class="home">
+    <header id="banner" class="body">
+            <h1><a class="uilink" href="/">andrew rogers: programming stuff <strong></strong></a></h1>
+    </header><!-- /#banner -->
+    <nav id="menu">
+        <ul>
+            <li><a class="uilink" href="/">Home</a></li>
+            <li><a class="uilink" href="http://github.com/cpancake">GitHub</a></li>
+            <li><a class="uilink" href="https://twitter.com/_cpancake">Twitter</a></li>
+        </ul>
+    </nav><!-- /#menu -->
+    <div class="container main-container">
+<section id="content" class="body">
   <header>
-    <h2 class="entry-title">
-      <a href="/psa-node-error.html" rel="bookmark"
-         title="Permalink to PSA: Node.js NPM Visual Studio Error">PSA: Node.js NPM Visual Studio Error</a></h2>
+    <h2 class="entry-title">PSA: Node.js NPM Visual Studio Error</h2>
  
-    <div class="post-info text-muted">
-      Posted on <abbr class="published" title="2014-07-28T22:03:00">
-        Mon 28 July 2014
-      </abbr>
-      <address class="vcard author">
-        by <a class="url fn" href="/author/cpancake.html">cpancake</a>
-      </address> in <a href="/category/posts.html">Posts</a> 
-      Tagged <a href="/tag/programming.html">programming </a>    </div><!-- /.post-info -->
   </header>
-     
+  <footer class="post-info">
+    <abbr class="published" title="2014-07-28T22:03:00-04:00">Mon 28 July 2014</abbr>
+    <address class="vcard author">
+      by           <a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+    </address>
+  </footer><!-- /.post-info -->
   <div class="entry-content">
     <p>If you are, like me, developing on Windows, and you, like me, have multiple versions of Visual Studio installed, you might see this error when a Node.js package needs to build something:</p>
-<div class="highlight"><pre><span class="nl">C:</span><span class="err">\</span><span class="n">Program</span> <span class="n">Files</span> <span class="p">(</span><span class="n">x86</span><span class="p">)</span><span class="err">\</span><span class="n">MSBuild</span><span class="err">\</span><span class="n">Microsoft</span><span class="p">.</span><span class="n">Cpp</span><span class="err">\</span><span class="n">v4</span><span class="mf">.0</span><span class="err">\</span><span class="n">V120</span><span class="err">\</span><span class="n">Microsoft</span><span class="p">.</span><span class="n">Cpp</span><span class="p">.</span><span class="n">Platform</span><span class="p">.</span><span class="n">targets</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span><span class="o">:</span> <span class="n">error</span> <span class="n">MSB8020</span><span class="o">:</span> <span class="n">The</span> <span class="n">build</span> <span class="n">tools</span> <span class="k">for</span> <span class="n">Visual</span> <span class="n">Studio</span> <span class="mi">2010</span> <span class="p">(</span><span class="n">Platform</span> <span class="n">Toolset</span> <span class="o">=</span> <span class="err">&#39;</span><span class="n">v100</span><span class="err">&#39;</span><span class="p">)</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">found</span><span class="p">.</span> <span class="n">To</span> <span class="n">build</span> <span class="n">using</span> <span class="n">the</span> <span class="n">v100</span> <span class="n">build</span> <span class="n">tools</span><span class="p">,</span> <span class="n">please</span> <span class="n">install</span> <span class="n">Visual</span> <span class="n">Studio</span> <span class="mi">2010</span> <span class="n">build</span> <span class="n">tools</span><span class="p">.</span>  <span class="n">Alternatively</span><span class="p">,</span> <span class="n">you</span> <span class="n">may</span> <span class="n">upgrade</span> <span class="n">to</span> <span class="n">the</span> <span class="n">current</span> <span class="n">Visual</span> <span class="n">Studio</span> <span class="n">tools</span> <span class="n">by</span> <span class="n">selecting</span> <span class="n">the</span> <span class="n">Project</span> <span class="n">menu</span> <span class="n">or</span> <span class="n">right</span><span class="o">-</span><span class="n">click</span> <span class="n">the</span> <span class="n">solution</span><span class="p">,</span> <span class="n">and</span> <span class="n">then</span> <span class="n">selecting</span> <span class="s">&quot;Upgrade Solution...&quot;</span><span class="p">.</span> <span class="p">[</span><span class="n">C</span><span class="o">:</span><span class="err">\</span><span class="n">wamp</span><span class="err">\</span><span class="n">node</span><span class="err">\</span><span class="n">spotify</span><span class="err">\</span><span class="n">node_modules</span><span class="err">\</span><span class="n">spotify</span><span class="o">-</span><span class="n">web</span><span class="err">\</span><span class="n">node_modules</span><span class="err">\</span><span class="n">ws</span><span class="err">\</span><span class="n">build</span><span class="err">\</span><span class="n">bufferutil</span><span class="p">.</span><span class="n">vcxproj</span><span class="p">]</span>
+<div class="highlight"><pre>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &#39;v100&#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &quot;Upgrade Solution...&quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]
 </pre></div>
 
 
 <p>This is an annoying and unfortunately common error for me when installing packages through NPM. After scouring the internet, it turns out that this is an error with gyp, meaning that neither the NPM or node-gyp folks can fix it. However, you can pass a command line parameter to npm to specify what version to build with:</p>
-<div class="highlight"><pre><span class="n">npm</span> <span class="n">install</span> <span class="n">spotify</span><span class="o">-</span><span class="n">web</span> <span class="o">-</span><span class="n">msvs_version</span><span class="o">=</span><span class="mi">2013</span>
+<div class="highlight"><pre>npm install spotify-web -msvs_version=2013
 </pre></div>
 
 
 <p>This parameter specifies what version of Visual Studio the library should build with. You can use any version, but I prefer the latest (2013).</p>
   </div><!-- /.entry-content -->
 </section>
-    <div class="comment">
-        <div id="disqus_thread"></div> <!-- comment app container -->
-    </div>
-	<!-- Comment BEGIN -->
-    <script type="text/javascript">
-        var disqus_shortname = 'commiesprogblog'; // required: replace example with your forum shortname
 
-        /* * * DON'T EDIT BELOW THIS LINE * * */
-        (function() {
-            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-        })();
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-     <!-- Comment END -->
-            <footer id="contentinfo" class="footer">
-                    <nav class="pull-right bottom-nav">
-                        <a href="/None">RSS</a>
-                    </nav>
-                    <address id="about" class="vcard body">
-                    &copy; <a href="">andrew rogers: programming stuff</a> Proudly powered by <a href="http://getpelican.com/">Pelican</a>
-                    </address><!-- /#about -->
-            </footer><!-- /#contentinfo -->
-        </div><!-- container -->
+<div id="disqus_thread"></div>
 <script type="text/javascript">
-var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_title = 'PSA: Node.js NPM Visual Studio Error';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
 </script>
-<script type="text/javascript">
-try {
-	var pageTracker = _gat._getTracker("UA-51284727-1");
-pageTracker._trackPageview();
-} catch(err) {}</script>
-    </body>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    <footer id="contentinfo" class="body container">
+        <address id="about" class="vcard body">
+            <p>
+                Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">anime-nigh</span>t.com</span>
+            </p>
+            <p>
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+            </p>
+        </address><!-- /#about -->
+    </footer><!-- /#contentinfo -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', UA-51284727-1, 'cpancake.github.io');
+        ga('send', 'pageview');
+    </script>
+</body>
 </html>
