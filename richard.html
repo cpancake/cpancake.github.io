@@ -168,6 +168,47 @@
 <p>There isn't documentation for the standard library yet (I haven't written the extension for Constitution), but every function has tests, and you can take a look at those.</p>
 <h2>Sample Program</h2>
 <p>I'm too lazy to write my own sample program, but here's one Berkin wrote:</p>
+<div class="highlight"><pre><span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">Select</span> <span class="o">=</span>
+  <span class="p">{</span>
+    <span class="err">#</span> <span class="nx">filter</span><span class="p">(</span><span class="nx">condition</span><span class="p">(</span><span class="nx">current</span><span class="p">))</span>
+    <span class="nx">where</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">filter</span><span class="p">)</span> <span class="o">=&gt;</span>
+    <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">results</span> <span class="o">=</span> <span class="p">[];</span>
+      <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">lst</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">filter</span><span class="p">(</span><span class="nx">lst</span><span class="p">[</span><span class="nx">i</span><span class="p">]))</span>
+          <span class="nx">results</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">lst</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+      <span class="p">}</span>
+      <span class="k">return</span> <span class="nx">results</span><span class="p">;</span>
+    <span class="p">},</span>
+    <span class="err">#</span> <span class="nx">accumulator</span><span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span>
+    <span class="nx">concat</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">accumulator</span><span class="p">)</span> <span class="o">=&gt;</span>
+    <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&quot;</span><span class="p">;</span>
+      <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">lst</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">accumulator</span><span class="p">(</span><span class="nx">buffer</span><span class="p">,</span> <span class="nx">lst</span><span class="p">[</span><span class="nx">i</span><span class="p">]);</span>
+      <span class="p">}</span>
+      <span class="k">return</span> <span class="nx">buffer</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">};</span>
+
+  <span class="k">return</span> <span class="nx">Select</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span>
+    <span class="nx">Select</span><span class="p">.</span><span class="nx">where</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
+    <span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}),</span>
+    <span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">current</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">current</span> <span class="o">~=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
+      <span class="nx">current</span> <span class="o">~=</span> <span class="nx">next</span><span class="p">;</span>
+      <span class="k">return</span> <span class="nx">current</span><span class="p">;</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>It's an implementation of some Linq-inspired features in Richard. I'll probably add some of these (where / filter, map / select, reduce, etc) into the Richard standard library before release.</p>
 <h2>In Conclusion</h2>
 <p>Richard is currently really buggy, but it's still usable! If you find any bugs, please add a test for it! We're especially concerned about "white" exceptions, i.e. exceptions that aren't RantRuntimeExceptions or RantCompilerExceptions.</p>
   </div><!-- /.entry-content -->
