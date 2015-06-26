@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>andrew rogers: programming stuff</title><link href="/" rel="alternate"></link><link href="/feeds%5Candrew-rogers.atom.xml" rel="self"></link><id>/</id><updated>2015-06-25T20:56:00-04:00</updated><entry><title>Richard 1.0 - Rant's New Scripting Engine</title><link href="/richard.html" rel="alternate"></link><updated>2015-06-25T20:56:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2015-06-25:richard.html</id><summary type="html">&lt;p&gt;Rave 2.0 is almost here, and it launches with a new scripting language I wrote called Richard! We're still ironing out the bugs and writing the documentation and the standard library, but here's a post describing most of what Richard is about.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>andrew rogers: programming stuff</title><link href="/" rel="alternate"></link><link href="/feeds%5Candrew-rogers.atom.xml" rel="self"></link><id>/</id><updated>2015-06-25T20:56:00-04:00</updated><entry><title>Richard 1.0 - Rant's New Scripting Engine</title><link href="/richard.html" rel="alternate"></link><updated>2015-06-25T20:56:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2015-06-25:richard.html</id><summary type="html">&lt;p&gt;Rant 2.0 is almost here, and it launches with a new scripting language I wrote called Richard! We're still ironing out the bugs and writing the documentation and the standard library, but here's a post describing most of what Richard is about.&lt;/p&gt;
 &lt;h2&gt;The History of Richard&lt;/h2&gt;
 &lt;p&gt;Let's look back to Rant 1.0, all those months ago. Rant 1.0 had a syntax for simple arithmetic operations. This supported basic math operations as well as variables. A simple arithmetic expression would look like this:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;`a = 10; a += 5; a` # 15
@@ -17,25 +17,66 @@
 
 
 &lt;p&gt;Richard has variables - obviously - of which there are two syntaxes. The regular &lt;code&gt;name = value;&lt;/code&gt; syntax works, and will create the variable in the current scope. There is also a &lt;code&gt;var name = value;&lt;/code&gt; or just &lt;code&gt;var name;&lt;/code&gt; syntax, which will create the variable in the current scope whether or not a value is given.&lt;/p&gt;
-&lt;p&gt;There are nine basic types in Richard:
-&lt;em&gt; number
-&lt;/em&gt; string
-&lt;em&gt; bool
-&lt;/em&gt; list
-&lt;em&gt; object
-&lt;/em&gt; function
-&lt;em&gt; pattern string
-&lt;/em&gt; no
-* undefined&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;number&lt;/strong&gt; types are internally represented as a double (i.e. a 64-bit double-precision number). Basic infix operations are supported - &lt;code&gt;+&lt;/code&gt;, &lt;code&gt;-&lt;/code&gt;, &lt;code&gt;*&lt;/code&gt;, &lt;code&gt;/&lt;/code&gt; - as well as groups - &lt;code&gt;(2 + 2) / 2&lt;/code&gt;. Order of operations applies, of course. There are assignment versions of those as well - &lt;code&gt;+=&lt;/code&gt;, &lt;code&gt;-=&lt;/code&gt;, &lt;code&gt;*=&lt;/code&gt;, and &lt;code&gt;/=&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;There are nine basic types in Richard:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;number&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;string&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;bool&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;list&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;object&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;function&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;pattern string&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;no&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;undefined&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;And what are all of these sweet types?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;number&lt;/strong&gt; types are internally represented as a double (i.e. a 64-bit double-precision number). Basic infix operations are supported - &lt;code&gt;+&lt;/code&gt;, &lt;code&gt;-&lt;/code&gt;, &lt;code&gt;*&lt;/code&gt;, &lt;code&gt;/&lt;/code&gt;, &lt;code&gt;%&lt;/code&gt; - as well as groups - &lt;code&gt;(2 + 2) / 2&lt;/code&gt;. Order of operations applies, of course. There are assignment versions of those as well - &lt;code&gt;+=&lt;/code&gt;, &lt;code&gt;-=&lt;/code&gt;, &lt;code&gt;*=&lt;/code&gt;, &lt;code&gt;/=&lt;/code&gt;, and &lt;code&gt;%=&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;string&lt;/strong&gt; types are .NET strings internally, which means I think they support Unicode. I'm not entirely sure. They are delimited by double quotes - single quotes not supported. There is a length property, accessible through the same way as any other object property - &lt;code&gt;"string".length&lt;/code&gt; or &lt;code&gt;"string"["length"]&lt;/code&gt;. You can also use an array indexer if you want to get a certain character of a string i.e. &lt;code&gt;"string"[2] # "r"&lt;/code&gt;. String concatenation is done using a special operator à la D. That is, the operator is &lt;code&gt;~&lt;/code&gt;. It will cast whatever is on the right side of it to a string if it isn't already a string, but the left side must be either a string or a pattern string. There is also an assignment version - &lt;code&gt;~=&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;bool&lt;/strong&gt; types are just simple booleans. &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;, you know the deal. There are a few boolean operators which return bool values. You probably know these from other languages: &lt;code&gt;==&lt;/code&gt;, &lt;code&gt;!=&lt;/code&gt;, &lt;code&gt;&amp;gt;&lt;/code&gt;, &lt;code&gt;&amp;gt;=&lt;/code&gt;, &lt;code&gt;&amp;lt;&lt;/code&gt;, &lt;code&gt;&amp;lt;=&lt;/code&gt;, and &lt;code&gt;!&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;list&lt;/strong&gt; types are lists of objects. There are three ways of defining them: a bare list syntax, using just commas - &lt;code&gt;x = 1, 2, 3, 4, 5;&lt;/code&gt;, a bracket syntax like in Javascript - &lt;code&gt;x = [1, 2, 3, 4, 5]&lt;/code&gt;, and a list initializer for creating empty lists of a certain length - &lt;code&gt;x = list 12;&lt;/code&gt;. When using the bare list syntax, any variables specified within that are lists will be expanded - that is, you can use the bare list syntax to concat two lists together: &lt;code&gt;x = 1, 2; y = 3, 4, 5; z = x, y;&lt;/code&gt;. If you don't want this, you can use the bracket syntax. You should also use the bracket syntax for creating a list of lists, or for passing lists as an argument to function calls, or for creating lists inside of object literals. You can access a list's length using the &lt;code&gt;length&lt;/code&gt; property: &lt;code&gt;x = 1, 2, 3, 4, 5; x.length # 5&lt;/code&gt;. If a list is returned from an expression (it's the last value evaluated, or it's explicitly returned using a return statement), it will be executed as a block in Rant.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;object&lt;/strong&gt; types are key/value objects, like in Javascript. And similarly to Javascript, the syntax is JSON. &lt;em&gt;Not&lt;/em&gt; Javascript object syntax, but JSON. That means all key names must be in double quotes. You can access an object's property via dot syntax (&lt;code&gt;{"test":2}.test&lt;/code&gt;) or via bracket accessor syntax (&lt;code&gt;{"test":2}["test"]&lt;/code&gt;). You can also set object properties the same way i.e. &lt;code&gt;x = {"test":2}; x.test = 3; x["test"] = 4&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;function&lt;/strong&gt; types are, well, functions. There are two ways to define them: using a C-like syntax - &lt;code&gt;x = function(a, b) { a + b };&lt;/code&gt; - or using a lambda syntax - &lt;code&gt;x = (a, b) =&amp;gt; a + b;&lt;/code&gt; Function calls are the same as every other language: &lt;code&gt;x(2, 3)&lt;/code&gt;. You can return things from them using a &lt;code&gt;return&lt;/code&gt; statement, just like every other language, though it'll return the last value evaluated in the function if there's no return statement. You can also &lt;code&gt;return&lt;/code&gt; from any other statement in Richard, which will end the expression and return the value to the Rant pattern.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;pattern string&lt;/strong&gt; types are like strings, but they can be executed as Rant patterns. It is declared using a dollar sign in front of a string: &lt;code&gt;$"&amp;lt;noun&amp;gt;"&lt;/code&gt;. They can be executed two ways: using a function call - &lt;code&gt;$"&amp;lt;noun&amp;gt;"()&lt;/code&gt; - or by being returned from an expression. You can use a concatenation operator like strings.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;no&lt;/strong&gt; is a null value. This means that it is a value that has been &lt;em&gt;explicitly&lt;/em&gt; set to null. It's a constant: &lt;code&gt;x = no&lt;/code&gt;. Why &lt;code&gt;no&lt;/code&gt; instead of null? It's funny.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
 &lt;p&gt;&lt;strong&gt;undefined&lt;/strong&gt; is a value that hasn't been set yet. In Richard, this type is identified by the constant &lt;code&gt;???&lt;/code&gt; - that is, if you set something to undefined (why?), it would look like this: &lt;code&gt;x = ???&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3&gt;Statements&lt;/h3&gt;
 &lt;p&gt;There are a few control flow statements in Richard.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;if&lt;/strong&gt; statements, along with their companion &lt;strong&gt;else&lt;/strong&gt; statements, are a way of conditionally executing a specified block of code. You use them like you do in any other language:&lt;/p&gt;
@@ -86,6 +127,8 @@
 &lt;p&gt;Richard currently doesn't have a very robust standard library, though we'll be adding to it constantly.&lt;/p&gt;
 &lt;p&gt;For now, there's two types of standard library functions: properties and global objects. Properties are created on a specific type of object, and can be used on any type of that object. For example, &lt;code&gt;string&lt;/code&gt; types have a &lt;code&gt;length&lt;/code&gt; property, and &lt;code&gt;list&lt;/code&gt; types have a &lt;code&gt;last&lt;/code&gt; property. Global objects are global Richard key/value objects which have properties of their own. For example, there's a &lt;code&gt;Math&lt;/code&gt; global object, which has a property &lt;code&gt;PI&lt;/code&gt; which returns the mathematical constant Pi. It also has functions like &lt;code&gt;sin&lt;/code&gt; and &lt;code&gt;atan2&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;There isn't documentation for the standard library yet (I haven't written the extension for Constitution), but every function has tests, and you can take a look at those.&lt;/p&gt;
+&lt;h2&gt;Sample Program&lt;/h2&gt;
+&lt;p&gt;I'm too lazy to write my own sample program, but here's one Berkin wrote:&lt;/p&gt;
 &lt;h2&gt;In Conclusion&lt;/h2&gt;
 &lt;p&gt;Richard is currently really buggy, but it's still usable! If you find any bugs, please add a test for it! We're especially concerned about "white" exceptions, i.e. exceptions that aren't RantRuntimeExceptions or RantCompilerExceptions.&lt;/p&gt;</summary><category term="programming"></category><category term="rant"></category></entry><entry><title>PSA: Node.js NPM Visual Studio Error</title><link href="/psa-node-error.html" rel="alternate"></link><updated>2014-07-28T22:03:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2014-07-28:psa-node-error.html</id><summary type="html">&lt;p&gt;If you are, like me, developing on Windows, and you, like me, have multiple versions of Visual Studio installed, you might see this error when a Node.js package needs to build something:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &amp;#39;v100&amp;#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &amp;quot;Upgrade Solution...&amp;quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]

@@ -38,7 +38,7 @@
     </address>
   </footer><!-- /.post-info -->
   <div class="entry-content">
-    <p>Rave 2.0 is almost here, and it launches with a new scripting language I wrote called Richard! We're still ironing out the bugs and writing the documentation and the standard library, but here's a post describing most of what Richard is about.</p>
+    <p>Rant 2.0 is almost here, and it launches with a new scripting language I wrote called Richard! We're still ironing out the bugs and writing the documentation and the standard library, but here's a post describing most of what Richard is about.</p>
 <h2>The History of Richard</h2>
 <p>Let's look back to Rant 1.0, all those months ago. Rant 1.0 had a syntax for simple arithmetic operations. This supported basic math operations as well as variables. A simple arithmetic expression would look like this:</p>
 <div class="highlight"><pre>`a = 10; a += 5; a` # 15
@@ -56,25 +56,66 @@
 
 
 <p>Richard has variables - obviously - of which there are two syntaxes. The regular <code>name = value;</code> syntax works, and will create the variable in the current scope. There is also a <code>var name = value;</code> or just <code>var name;</code> syntax, which will create the variable in the current scope whether or not a value is given.</p>
-<p>There are nine basic types in Richard:
-<em> number
-</em> string
-<em> bool
-</em> list
-<em> object
-</em> function
-<em> pattern string
-</em> no
-* undefined</p>
-<p><strong>number</strong> types are internally represented as a double (i.e. a 64-bit double-precision number). Basic infix operations are supported - <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code> - as well as groups - <code>(2 + 2) / 2</code>. Order of operations applies, of course. There are assignment versions of those as well - <code>+=</code>, <code>-=</code>, <code>*=</code>, and <code>/=</code>.</p>
+<p>There are nine basic types in Richard:</p>
+<ul>
+<li>
+<p>number</p>
+</li>
+<li>
+<p>string</p>
+</li>
+<li>
+<p>bool</p>
+</li>
+<li>
+<p>list</p>
+</li>
+<li>
+<p>object</p>
+</li>
+<li>
+<p>function</p>
+</li>
+<li>
+<p>pattern string</p>
+</li>
+<li>
+<p>no</p>
+</li>
+<li>
+<p>undefined</p>
+</li>
+</ul>
+<p>And what are all of these sweet types?</p>
+<ul>
+<li>
+<p><strong>number</strong> types are internally represented as a double (i.e. a 64-bit double-precision number). Basic infix operations are supported - <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code> - as well as groups - <code>(2 + 2) / 2</code>. Order of operations applies, of course. There are assignment versions of those as well - <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, and <code>%=</code>.</p>
+</li>
+<li>
 <p><strong>string</strong> types are .NET strings internally, which means I think they support Unicode. I'm not entirely sure. They are delimited by double quotes - single quotes not supported. There is a length property, accessible through the same way as any other object property - <code>"string".length</code> or <code>"string"["length"]</code>. You can also use an array indexer if you want to get a certain character of a string i.e. <code>"string"[2] # "r"</code>. String concatenation is done using a special operator à la D. That is, the operator is <code>~</code>. It will cast whatever is on the right side of it to a string if it isn't already a string, but the left side must be either a string or a pattern string. There is also an assignment version - <code>~=</code>.</p>
+</li>
+<li>
 <p><strong>bool</strong> types are just simple booleans. <code>true</code> or <code>false</code>, you know the deal. There are a few boolean operators which return bool values. You probably know these from other languages: <code>==</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, and <code>!</code>.</p>
+</li>
+<li>
 <p><strong>list</strong> types are lists of objects. There are three ways of defining them: a bare list syntax, using just commas - <code>x = 1, 2, 3, 4, 5;</code>, a bracket syntax like in Javascript - <code>x = [1, 2, 3, 4, 5]</code>, and a list initializer for creating empty lists of a certain length - <code>x = list 12;</code>. When using the bare list syntax, any variables specified within that are lists will be expanded - that is, you can use the bare list syntax to concat two lists together: <code>x = 1, 2; y = 3, 4, 5; z = x, y;</code>. If you don't want this, you can use the bracket syntax. You should also use the bracket syntax for creating a list of lists, or for passing lists as an argument to function calls, or for creating lists inside of object literals. You can access a list's length using the <code>length</code> property: <code>x = 1, 2, 3, 4, 5; x.length # 5</code>. If a list is returned from an expression (it's the last value evaluated, or it's explicitly returned using a return statement), it will be executed as a block in Rant.</p>
+</li>
+<li>
 <p><strong>object</strong> types are key/value objects, like in Javascript. And similarly to Javascript, the syntax is JSON. <em>Not</em> Javascript object syntax, but JSON. That means all key names must be in double quotes. You can access an object's property via dot syntax (<code>{"test":2}.test</code>) or via bracket accessor syntax (<code>{"test":2}["test"]</code>). You can also set object properties the same way i.e. <code>x = {"test":2}; x.test = 3; x["test"] = 4</code>.</p>
+</li>
+<li>
 <p><strong>function</strong> types are, well, functions. There are two ways to define them: using a C-like syntax - <code>x = function(a, b) { a + b };</code> - or using a lambda syntax - <code>x = (a, b) =&gt; a + b;</code> Function calls are the same as every other language: <code>x(2, 3)</code>. You can return things from them using a <code>return</code> statement, just like every other language, though it'll return the last value evaluated in the function if there's no return statement. You can also <code>return</code> from any other statement in Richard, which will end the expression and return the value to the Rant pattern.</p>
+</li>
+<li>
 <p><strong>pattern string</strong> types are like strings, but they can be executed as Rant patterns. It is declared using a dollar sign in front of a string: <code>$"&lt;noun&gt;"</code>. They can be executed two ways: using a function call - <code>$"&lt;noun&gt;"()</code> - or by being returned from an expression. You can use a concatenation operator like strings.</p>
+</li>
+<li>
 <p><strong>no</strong> is a null value. This means that it is a value that has been <em>explicitly</em> set to null. It's a constant: <code>x = no</code>. Why <code>no</code> instead of null? It's funny.</p>
+</li>
+<li>
 <p><strong>undefined</strong> is a value that hasn't been set yet. In Richard, this type is identified by the constant <code>???</code> - that is, if you set something to undefined (why?), it would look like this: <code>x = ???</code></p>
+</li>
+</ul>
 <h3>Statements</h3>
 <p>There are a few control flow statements in Richard.</p>
 <p><strong>if</strong> statements, along with their companion <strong>else</strong> statements, are a way of conditionally executing a specified block of code. You use them like you do in any other language:</p>
@@ -125,6 +166,8 @@
 <p>Richard currently doesn't have a very robust standard library, though we'll be adding to it constantly.</p>
 <p>For now, there's two types of standard library functions: properties and global objects. Properties are created on a specific type of object, and can be used on any type of that object. For example, <code>string</code> types have a <code>length</code> property, and <code>list</code> types have a <code>last</code> property. Global objects are global Richard key/value objects which have properties of their own. For example, there's a <code>Math</code> global object, which has a property <code>PI</code> which returns the mathematical constant Pi. It also has functions like <code>sin</code> and <code>atan2</code>.</p>
 <p>There isn't documentation for the standard library yet (I haven't written the extension for Constitution), but every function has tests, and you can take a look at those.</p>
+<h2>Sample Program</h2>
+<p>I'm too lazy to write my own sample program, but here's one Berkin wrote:</p>
 <h2>In Conclusion</h2>
 <p>Richard is currently really buggy, but it's still usable! If you find any bugs, please add a test for it! We're especially concerned about "white" exceptions, i.e. exceptions that aren't RantRuntimeExceptions or RantCompilerExceptions.</p>
   </div><!-- /.entry-content -->
