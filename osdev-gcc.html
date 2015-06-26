@@ -38,7 +38,8 @@
     </address>
   </footer><!-- /.post-info -->
   <div class="entry-content">
-    <p>I'm going to be writing some articles about operating system development, because it seems that most of the tutorials available are either outdated or incomplete. For the first part, I'm going to be going over how to compile your OS. This was adapted from the <a href="http://wiki.osdev.org/GCC_Cross-Compiler">osdev.org</a> guide.</p>
+    <p><strong>This series has been discontinued in favor of the far superior <a href="http://littleosbook.github.io/">Little OS Book</a>. Take a look at that one if you want to develop an operating system!</strong></p>
+<p>I'm going to be writing some articles about operating system development, because it seems that most of the tutorials available are either outdated or incomplete. For the first part, I'm going to be going over how to compile your OS. This was adapted from the <a href="http://wiki.osdev.org/GCC_Cross-Compiler">osdev.org</a> guide.</p>
 <p>To compile an operating system, a linker is needed. The usual choice for this is GCC's linker, but it needs some work before you can use it for operating system development. That's because GCC, by default, compiles for the native operating system (Windows EXEs on Windows, Linux ELF files on Linux). To compile operating systems, we must recompile GCC for platform-less ELF files, like a kernel. This is simple, but it takes a while.</p>
 <h2>Preparation</h2>
 <p>First, if you're on Windows, you need to install Cygwin. It's likely possible to build GCC on normal Windows, but it's much easier to do it on Cygwin. <a href="https://cygwin.com/install.html">Download</a> and install Cygwin, and stop at the package installation screen. Make sure you install these packages:</p>
