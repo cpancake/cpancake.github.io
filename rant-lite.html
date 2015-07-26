@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+          <title>andrew rogers: programming stuff</title>
+        <meta charset="utf-8" />
+        <link href='http://fonts.googleapis.com/css?family=Montserrat:700|Roboto+Condensed:400italic,400,700' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="/theme/css/bootstrap.min.css?698b47d4">
+        <link rel="stylesheet" href="/theme/css/style.min.css?bd02deb6">
+
+
+
+    <meta name="tags" contents="programming" />
+    <meta name="tags" contents="rant" />
+
+</head>
+
+<body id="index" class="home">
+    <header id="banner" class="body">
+            <h1><a class="uilink" href="/">andrew rogers: programming stuff <strong></strong></a></h1>
+    </header><!-- /#banner -->
+    <nav id="menu">
+        <ul>
+            <li><a class="uilink" href="/">Home</a></li>
+            <li><a class="uilink" href="http://github.com/cpancake">GitHub</a></li>
+            <li><a class="uilink" href="https://twitter.com/_cpancake">Twitter</a></li>
+        </ul>
+    </nav><!-- /#menu -->
+    <div class="container main-container">
+<section id="content" class="body">
+  <header>
+    <h2 class="entry-title">Rant Lite (a very bad idea)</h2>
+ 
+  </header>
+  <footer class="post-info">
+    <abbr class="published" title="2015-07-26T05:26:00-04:00">Sun 26 July 2015</abbr>
+    <address class="vcard author">
+      by           <a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+    </address>
+  </footer><!-- /.post-info -->
+  <div class="entry-content">
+    <p>For once, I finally have a project where I want to use Rant instead of just contributing to it. The problem is that this project is written in Javascript - specifically, browser-based Javascript - so I can't use Rant out of the box. So I thought I'd try out JSIL, a tool that converts compiled IL code (.NET assemblies) into Javascript. How bad could it be?</p>
+<p><img alt="Pretty bad." src="/images/rant-lite-1.png" /></p>
+<p>If you don't think nearly 25MB of scripts is ridiculous, you probably don't do much web dev. jQuery, clocking in at ~82kb minified, is considered hefty. This size was just unmanageable. So I thought "Well, maybe if I minify it?"</p>
+<p><img alt="Erm, sort of." src="/images/rant-lite-2.png" /></p>
+<p>Well, that kind of worked. It squeezed out about 5MB, which is alright. It's still not good enough. So I tried gzipping it.</p>
+<p><img alt="Woop!" src="/images/rant-lite-3.png" /></p>
+<p>I'd prefer smaller, but 1.4MB is good enough. But then the question arose: how am I going to get it to clients? I don't want the server to have to gzip 19MB of content on every request, and it should be loaded during the asset loading stage anyways so that the page doesn't hang. It was then that I came up with a very bad idea: I was already using browserify, which has a ported version of zlib. I wonder...</p>
+<div class="highlight"><pre><span class="kd">function</span> <span class="nx">extractJsz</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">zlib</span><span class="p">.</span><span class="nx">gunzipSync</span><span class="p">(</span><span class="k">new</span> <span class="nx">Uint8Array</span><span class="p">(</span><span class="nx">file</span><span class="p">));</span>
+  <span class="kd">var</span> <span class="nx">script</span> <span class="o">=</span> <span class="nx">Utf8ArrayToStr</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+  <span class="nb">eval</span><span class="p">(</span><span class="nx">script</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Utf8ArrayToStr implementation goes here</span>
+</pre></div>
+
+
+<p>It was a bad idea, but it worked. It was slow, but it was faster than downloading 19MB of scripts. However, there was another problem: while the script was executing, it wasn't <em>working</em>. It was then that I went back and bothered to read the rest of the docs for JSIL.</p>
+<p>Apparently, though there are no hidden secrets for reducing the size of your scripts by 24MB (at least none that I found), the docs did contain a "helpful" bit of information: JSIL comes with a synchronous loader that it forces you to use. That is, you can't load your scripts the way you want to load them - at least, not in a way that's documented - and more importantly, there's no way I could fit my hacked together gzipping contraption into there. I also just didn't like the idea of having to package so many loose dependencies loaded outside of my control. So I came up with a different, possibly worse idea.</p>
+<h2>Rant Lite</h2>
+<p>With JSIL off the table, I looked at my options for porting Rant to Javascript. I could either:</p>
+<ul>
+<li>Port Rant to Javascript.</li>
+<li>Port a small part of Rant to Javascript.</li>
+</ul>
+<p>I went with the second option, because I'm lazy. I put together a PEG.js grammar, wrote a loader for rantpkg files, and a really lazy runtime. And yes, it's recursive. I'm sorry.</p>
+<p>The result is a clone of Rant that only supports queries, blocks, and block weights. Because as far as I can tell, that's all I need. It only supports loading rantpkg files, since it's easier than trying to write a new dictionary format parser in Javascript. And it doesn't support multiple queries on the first item in a block, because I fucked up the grammar and I'll fix it later damn it.</p>
+<p>The resulting PEG.js grammar looks like this:</p>
+<div class="highlight"><pre><span class="nx">rant</span>
+  <span class="o">=</span> <span class="nx">item</span><span class="o">*</span>
+
+<span class="nx">item</span>
+  <span class="o">=</span> <span class="nx">block</span>
+  <span class="o">/</span> <span class="nx">query</span>
+  <span class="o">/</span> <span class="nx">t</span><span class="o">:</span><span class="nx">text_acceptable</span><span class="o">+</span> <span class="nx">s</span><span class="o">:</span><span class="nx">space</span><span class="o">?</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span> <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="nx">value</span><span class="o">:</span> <span class="nx">t</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="nx">s</span> <span class="o">?</span> <span class="s1">&#39; &#39;</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">}</span> <span class="p">}</span>
+  <span class="o">/</span> <span class="nx">space</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="p">;</span> <span class="p">}</span>
+
+<span class="nx">block</span>
+  <span class="o">=</span> <span class="s2">&quot;{&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">first_weight</span><span class="o">:</span><span class="nx">block_weight</span><span class="o">?</span> <span class="nx">first_item</span><span class="o">:</span><span class="nx">block_item</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">rest</span><span class="o">:</span><span class="p">(</span><span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;|&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">weight</span><span class="o">:</span><span class="nx">block_weight</span><span class="o">?</span> <span class="nx">block_item</span><span class="o">*</span><span class="p">)</span><span class="o">*</span> <span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;}&quot;</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">items</span> <span class="o">=</span> <span class="p">[</span> <span class="nx">first_item</span> <span class="p">];</span>
+    <span class="kd">var</span> <span class="nx">weights</span> <span class="o">=</span> <span class="p">[</span><span class="nx">first_weight</span> <span class="o">?</span> <span class="nx">first_weight</span> <span class="o">:</span> <span class="mi">1</span><span class="p">];</span>
+    <span class="nx">items</span> <span class="o">=</span> <span class="nx">items</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">rest</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span> <span class="p">{</span> <span class="nx">weights</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">r</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">||</span> <span class="mi">1</span><span class="p">);</span> <span class="k">return</span> <span class="nx">r</span><span class="p">[</span><span class="nx">r</span><span class="p">.</span><span class="nx">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">];</span> <span class="p">}));</span>
+    <span class="k">return</span> <span class="p">{</span>
+      <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;block&#39;</span><span class="p">,</span>
+      <span class="nx">items</span><span class="o">:</span> <span class="nx">items</span><span class="p">,</span>
+      <span class="nx">weights</span><span class="o">:</span> <span class="nx">weights</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+<span class="nx">block_weight</span>
+  <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;(&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">w</span><span class="o">:</span><span class="nx">number</span> <span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;)&quot;</span> <span class="nx">space</span><span class="o">*</span><span class="p">)</span> <span class="nx">space</span><span class="o">*</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">w</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span> <span class="p">}</span>
+
+<span class="nx">block_item</span>
+  <span class="o">=</span> <span class="nx">query</span>
+  <span class="o">/</span> <span class="nx">a</span><span class="o">:</span><span class="nx">text_acceptable</span><span class="o">+</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span><span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="nx">value</span><span class="o">:</span> <span class="nx">a</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">};</span> <span class="p">}</span>
+
+<span class="nx">query</span>
+  <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&lt;&quot;</span> <span class="nx">name</span><span class="o">:</span><span class="nx">acceptable</span> <span class="nx">subtype</span><span class="o">:</span><span class="p">([</span><span class="err">\</span><span class="p">.]</span><span class="nx">acceptable</span><span class="p">)</span><span class="o">?</span> <span class="nx">classes</span><span class="o">:</span><span class="p">([</span><span class="err">\</span><span class="o">-</span><span class="p">]</span><span class="nx">name</span><span class="o">:</span><span class="nx">acceptable</span><span class="p">)</span><span class="o">*</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span> <span class="p">{</span> 
+      <span class="kd">var</span> <span class="nx">cs</span> <span class="o">=</span> <span class="nx">classes</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">c</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">c</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span> <span class="p">});</span>
+      <span class="kd">var</span> <span class="nx">s</span> <span class="o">=</span> <span class="p">(</span><span class="nx">subtype</span> <span class="o">?</span> <span class="nx">subtype</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">);</span>
+      <span class="k">return</span> <span class="p">{</span> 
+        <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;query&#39;</span><span class="p">,</span> <span class="nx">name</span><span class="o">:</span> <span class="nx">name</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nx">subtype</span><span class="o">:</span> <span class="nx">s</span><span class="p">,</span> <span class="nx">classes</span><span class="o">:</span> <span class="nx">cs</span>
+      <span class="p">};</span> 
+    <span class="p">}</span>
+
+<span class="nx">number</span>
+  <span class="o">=</span> <span class="nx">n</span><span class="o">:</span><span class="p">([</span><span class="mi">0</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span><span class="o">+</span><span class="p">([</span><span class="err">\</span><span class="p">.][</span><span class="mi">0</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span><span class="o">+</span><span class="p">)</span><span class="o">?</span><span class="p">)</span> <span class="p">{</span> 
+      <span class="kd">var</span> <span class="nx">number</span> <span class="o">=</span> <span class="nx">n</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="nx">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">?</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="nx">n</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">].</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">);</span>
+      <span class="k">return</span> <span class="p">{</span> 
+        <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;number&#39;</span><span class="p">,</span>
+        <span class="nx">value</span><span class="o">:</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">number</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+      <span class="p">}</span> 
+    <span class="p">}</span> 
+
+<span class="nx">acceptable</span>
+  <span class="o">=</span> <span class="p">[</span><span class="nx">A</span><span class="o">-</span><span class="nx">Za</span><span class="o">-</span><span class="nx">z0</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span><span class="o">+</span>
+
+<span class="nx">text_acceptable</span>
+  <span class="o">=</span> <span class="p">[</span><span class="nx">A</span><span class="o">-</span><span class="nx">Za</span><span class="o">-</span><span class="nx">z0</span><span class="o">-</span><span class="mi">9</span><span class="o">!:</span><span class="p">;,</span><span class="err">\</span><span class="o">-</span><span class="err">\</span><span class="p">.</span><span class="o">?</span><span class="err">&#39;&quot;</span><span class="nx">$</span><span class="o">%&amp;</span><span class="err">\</span><span class="o">*</span><span class="p">]</span>
+
+<span class="nx">space</span> <span class="o">=</span> <span class="p">[</span> <span class="err">\</span><span class="nx">n</span><span class="err">\</span><span class="nx">t</span><span class="p">]</span>
+</pre></div>
+
+
+<p>I might release it at some point, but I don't see anyone else really having much use for it. Plus I don't think it's Rant compatible. At some point I'll get around to writing a proper Javascript port of Rant. One of these days...</p>
+  </div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_title = 'Rant Lite (a very bad idea)';
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
+    <footer id="contentinfo" class="body container">
+        <address id="about" class="vcard body">
+            <p>
+                Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">anime-nigh</span>t.com</span>
+            </p>
+            <p>
+                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+            </p>
+        </address><!-- /#about -->
+    </footer><!-- /#contentinfo -->
+    <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-51284727-1', 'cpancake.github.io');
+        ga('send', 'pageview');
+    </script>
+</body>
+</html>
