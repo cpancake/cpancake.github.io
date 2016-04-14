@@ -9,7 +9,7 @@
 
 
 
-    <meta name="tags" contents="programming" />
+    <meta name="tags" contents="projects" />
 
 </head>
 
@@ -28,34 +28,31 @@
     <div class="container main-container">
 <section id="content" class="body">
   <header>
-    <h2 class="entry-title">PSA: Node.js NPM Visual Studio Error</h2>
+    <h2 class="entry-title">Everything I Hate Becomes Popular</h2>
  
   </header>
   <footer class="post-info">
-    <abbr class="published" title="2014-07-28T22:03:00-04:00">Mon 28 July 2014</abbr>
+    <abbr class="published" title="2016-04-14T19:06:00-04:00">Thu 14 April 2016</abbr>
     <address class="vcard author">
       by           <a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
     </address>
   </footer><!-- /.post-info -->
   <div class="entry-content">
-    <p>If you are, like me, developing on Windows, and you, like me, have multiple versions of Visual Studio installed, you might see this error when a Node.js package needs to build something:</p>
-<div class="highlight"><pre>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &#39;v100&#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &quot;Upgrade Solution...&quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]
-</pre></div>
-
-
-<p>This is an annoying and unfortunately common error for me when installing packages through NPM. After scouring the internet, it turns out that this is an error with gyp, meaning that neither the NPM or node-gyp folks can fix it. However, you can pass a command line parameter to npm to specify what version to build with:</p>
-<div class="highlight"><pre>npm install spotify-web -msvs_version=2013
-</pre></div>
-
-
-<p>This parameter specifies what version of Visual Studio the library should build with. You can use any version, but I prefer the latest (2013).</p>
+    <p>Sometimes, I create quick and dirty projects on a whim and then release them. And, for some reason, those seem to become more popular than things I put effort into.</p>
+<p>My most popular GitHub repository is a one day project to build a Steam login system for Node.js. I'm not even sure it works anymore.</p>
+<p>I created a joke flash game named "YouTube Let's Player Simulator 2014" to make fun of the state of video game LPs. It took three hours to make. The game currently has 181,377 plays. </p>
+<p>My second most popular GitHub repository is a DeviantArt clone I attempted to make over four years ago. I'm not even sure there's any functionality there.</p>
+<p>The three most popular YouTube videos on my channel are zero effort videos for a group of people I no longer want any part of.</p>
+<p>Once, out of spite for a guy who really annoyed me, I fixed up the Garry's Mod gamemode Pirate Ship Wars to work with Garry's Mod 13. The original fix took a few hours. The last commit I made was three days later. The workshop item has 235,086 subscribers.</p>
+<p>I feel like there must be a way to use this phenomenon to my advantage.</p>
+<p>(This is not a humblebrag, I promise!)</p>
   </div><!-- /.entry-content -->
 </section>
 
 <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'commiesprogblog'; 
-    var disqus_title = 'PSA: Node.js NPM Visual Studio Error';
+    var disqus_title = 'Everything I Hate Becomes Popular';
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
         dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';

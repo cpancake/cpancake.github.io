@@ -1,5 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>andrew rogers: programming stuff</title><link>/</link><description></description><atom:link href="/feeds%5Candrew-rogers.rss.xml" rel="self"></atom:link><lastBuildDate>Sun, 26 Jul 2015 05:26:00 -0400</lastBuildDate><item><title>Rant Lite (a very bad idea)</title><link>/rant-lite.html</link><description>&lt;p&gt;For once, I finally have a project where I want to use Rant instead of just contributing to it. The problem is that this project is written in Javascript - specifically, browser-based Javascript - so I can't use Rant out of the box. So I thought I'd try out JSIL, a tool that converts compiled IL code (.NET assemblies) into Javascript. How bad could it be?&lt;/p&gt;
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>andrew rogers: programming stuff</title><link>/</link><description></description><atom:link href="/feeds%5Candrew-rogers.rss.xml" rel="self"></atom:link><lastBuildDate>Thu, 14 Apr 2016 19:06:00 -0400</lastBuildDate><item><title>Everything I Hate Becomes Popular</title><link>/everything-i-hate-becomes-popular.html</link><description>&lt;p&gt;Sometimes, I create quick and dirty projects on a whim and then release them. And, for some reason, those seem to become more popular than things I put effort into.&lt;/p&gt;
+&lt;p&gt;My most popular GitHub repository is a one day project to build a Steam login system for Node.js. I'm not even sure it works anymore.&lt;/p&gt;
+&lt;p&gt;I created a joke flash game named "YouTube Let's Player Simulator 2014" to make fun of the state of video game LPs. It took three hours to make. The game currently has 181,377 plays. &lt;/p&gt;
+&lt;p&gt;My second most popular GitHub repository is a DeviantArt clone I attempted to make over four years ago. I'm not even sure there's any functionality there.&lt;/p&gt;
+&lt;p&gt;The three most popular YouTube videos on my channel are zero effort videos for a group of people I no longer want any part of.&lt;/p&gt;
+&lt;p&gt;Once, out of spite for a guy who really annoyed me, I fixed up the Garry's Mod gamemode Pirate Ship Wars to work with Garry's Mod 13. The original fix took a few hours. The last commit I made was three days later. The workshop item has 235,086 subscribers.&lt;/p&gt;
+&lt;p&gt;I feel like there must be a way to use this phenomenon to my advantage.&lt;/p&gt;
+&lt;p&gt;(This is not a humblebrag, I promise!)&lt;/p&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Andrew Rogers</dc:creator><pubDate>Thu, 14 Apr 2016 19:06:00 -0400</pubDate><guid>tag:,2016-04-14:everything-i-hate-becomes-popular.html</guid><category>projects</category></item><item><title>Hamlet: The Movie: The Game</title><link>/hamlet-the-movie-the-game.html</link><description>&lt;p&gt;Here's a game I made for a school project. It's called &lt;em&gt;Hamlet: The Movie: The Game&lt;/em&gt;, despite having basically nothing to do with any of the &lt;em&gt;Hamlet&lt;/em&gt; movies. It is, however, a game. A rhythm game! Yeah.&lt;/p&gt;
+&lt;p&gt;Here's the download:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="/archives/hamlet.zip"&gt;hamlet.zip (42.1 MB)&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Give it a play or whatever you do with video games. &lt;/p&gt;
+&lt;p&gt;Here's some credits:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Me - I made the game.&lt;/li&gt;
+&lt;li&gt;Various models by Nemeth Designs, oliviergide, arataca, and DGordillo&lt;/li&gt;
+&lt;li&gt;The song is Samurai by F.C.F.&lt;/li&gt;
+&lt;li&gt;The voice clips are from the Mel Gibson &lt;em&gt;Hamlet&lt;/em&gt; film.&lt;/li&gt;
+&lt;li&gt;The character models were created in Mixamo.&lt;/li&gt;
+&lt;/ul&gt;</description><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">Andrew Rogers</dc:creator><pubDate>Thu, 17 Dec 2015 17:11:00 -0500</pubDate><guid>tag:,2015-12-17:hamlet-the-movie-the-game.html</guid><category>video games</category></item><item><title>Rant Lite (a very bad idea)</title><link>/rant-lite.html</link><description>&lt;p&gt;For once, I finally have a project where I want to use Rant instead of just contributing to it. The problem is that this project is written in Javascript - specifically, browser-based Javascript - so I can't use Rant out of the box. So I thought I'd try out JSIL, a tool that converts compiled IL code (.NET assemblies) into Javascript. How bad could it be?&lt;/p&gt;
 &lt;p&gt;&lt;img alt="Pretty bad." src="/images/rant-lite-1.png" /&gt;&lt;/p&gt;
 &lt;p&gt;If you don't think nearly 25MB of scripts is ridiculous, you probably don't do much web dev. jQuery, clocking in at ~82kb minified, is considered hefty. This size was just unmanageable. So I thought "Well, maybe if I minify it?"&lt;/p&gt;
 &lt;p&gt;&lt;img alt="Erm, sort of." src="/images/rant-lite-2.png" /&gt;&lt;/p&gt;
