@@ -4,16 +4,19 @@
 &lt;li&gt;&lt;a href="/archives/harambe.zip"&gt;harambe.zip (52.8 MB)&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;I promise, it's not actually bad at all.&lt;/p&gt;
-&lt;p&gt;Special thanks to:
-&lt;em&gt; Connor Norris
-&lt;/em&gt; Jonathan Cusdan
-&lt;em&gt; James Rankin
-&lt;/em&gt; Bradley Schulze
-&lt;em&gt; Michael Martin
-&lt;/em&gt; Yukon Wainczak
-&lt;em&gt; Chloe Tibets
-&lt;/em&gt; Ween&lt;/p&gt;
-&lt;p&gt;And hey, if you want, you should check out &lt;a href="https://www.anime-night.com/"&gt;Anime Night&lt;/a&gt;. It's a good website and it's not bad.&lt;/p&gt;</summary><category term="video games"></category></entry><entry><title>Here's Some Menus</title><link href="/some-menus.html" rel="alternate"></link><updated>2016-09-25T18:53:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2016-09-25:some-menus.html</id><summary type="html">&lt;p&gt;I put some physical menus online. That's pretty much it.&lt;/p&gt;
+&lt;p&gt;Special thanks to:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Connor Norris&lt;/li&gt;
+&lt;li&gt;Jonathan Cusdan&lt;/li&gt;
+&lt;li&gt;James Rankin&lt;/li&gt;
+&lt;li&gt;Bradley Schulze&lt;/li&gt;
+&lt;li&gt;Michael Martin&lt;/li&gt;
+&lt;li&gt;Yukon Wainczak&lt;/li&gt;
+&lt;li&gt;Chloe Tibets&lt;/li&gt;
+&lt;li&gt;Ween&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;And hey, if you want, you should check out &lt;a href="https://www.anime-night.com/"&gt;Anime Night&lt;/a&gt;. It's a good website and it's not bad.&lt;/p&gt;
+&lt;p&gt;If you want to play it on Kongregate, you can do so &lt;a href="http://www.kongregate.com/games/PlasticContainer/sam-law-in-harambes-revenge"&gt;here&lt;/a&gt;.&lt;/p&gt;</summary><category term="video games"></category></entry><entry><title>Here's Some Menus</title><link href="/some-menus.html" rel="alternate"></link><updated>2016-09-25T18:53:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2016-09-25:some-menus.html</id><summary type="html">&lt;p&gt;I put some physical menus online. That's pretty much it.&lt;/p&gt;
 &lt;p&gt;If you're a college student in the Worcester area, you might find it useful.&lt;/p&gt;
 &lt;p&gt;&lt;a href="http://cpancake.me/menus/"&gt;http://cpancake.me/menus/&lt;/a&gt;&lt;/p&gt;</summary><category term="projects"></category></entry><entry><title>Spotify on foobar2000</title><link href="/spotify-on-foobar2000.html" rel="alternate"></link><updated>2016-07-23T02:11:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:,2016-07-23:spotify-on-foobar2000.html</id><summary type="html">&lt;p&gt;Spotify recently &lt;a href="http://www.digitaltrends.com/music/spotify-lyrics-musixamatch/"&gt;ended its partnership with Musixmatch&lt;/a&gt;, meaning the lyrics feature of Spotify has been removed. I can get lyrics anywhere I want, but how am I going to get lyrics synced to the songs I'm playing in Spotify?&lt;/p&gt;
 &lt;p&gt;Their web API doesn't expose any features for this. MPRIS was a dead-end - it's only for the Spotify client on Linux, and it's barely supported and possibly not working at that. So there's no way that I could find of retrieving song details from their native client - and my only other option was finding a way to play Spotify on a different client that has better plugin support.&lt;/p&gt;
