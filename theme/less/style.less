@@ -3,7 +3,7 @@
 
 body
 {
-	background: @body-bg;
+	background: #333;
 	color: #fff;
 }
 
@@ -11,6 +11,29 @@ header
 {
 	font-family: @font-family-header;
 	width: 100%;
+
+	.header-align-container
+	{
+		text-align: right;
+		color: #333;
+		color: rgba(255, 255, 255, 1.0);
+		text-shadow: 1px 1px 4px #000;
+
+		h1
+		{
+			margin-bottom: 0;
+		}
+		h3
+		{
+			font-size: 16px;
+			margin-top: 0;
+		}
+	}
+}
+header.header-flex
+{
+	display: flex;
+	justify-content: center;
 }
 header#banner
 {
