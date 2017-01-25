@@ -109,7 +109,11 @@ make install-target-libgcc
 <div id="disqus_thread"></div>
 <script type="text/javascript">
     var disqus_shortname = 'commiesprogblog'; 
-    var disqus_title = 'Cross-compiling GCC for OS Development';
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = 'Cross-compiling GCC for OS Development';
+    }
     (function() {
         var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
         dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
