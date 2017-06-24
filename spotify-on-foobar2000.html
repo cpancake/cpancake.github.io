@@ -1,45 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-          <title>Spotify on foobar2000 - the andrew rogers webzone</title>
-        <meta charset="utf-8" />
-        <link href='//fonts.googleapis.com/css?family=Montserrat:700|Roboto+Condensed:400italic,400,700' rel='stylesheet' type='text/css'>
-        <link rel="stylesheet" href="/theme/css/bootstrap.min.css?698b47d4">
-        <link rel="stylesheet" href="/theme/css/style.min.css?bd02deb6">
+			<title>Spotify on foobar2000 - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css?13e70f0d">
 
 
 
-    <meta name="tags" contents="spotify" />
-    <meta name="tags" contents="music" />
-    <meta name="tags" contents="programming" />
+		<meta name="tags" contents="spotify" />
+		<meta name="tags" contents="music" />
+		<meta name="tags" contents="programming" />
 
 </head>
 
 <body id="index" class="home">
-    <header id="banner" class="body">
-            <h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
-    </header><!-- /#banner -->
-    <nav id="menu">
-        <ul>
-            <li><a class="uilink" href="/">Home</a></li>
-            <li><a class="uilink" href="/portfolio/">Portfolio</a></li>
-            <li><a class="uilink" href="https://twitter.com/_cpancake">Twitter</a></li>
-        </ul>
-    </nav><!-- /#menu -->
-    <div class="container main-container">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
 <section id="content" class="body">
-  <header>
-    <h2 class="entry-title">Spotify on foobar2000</h2>
+	<div class="article-header">
+		<h2 class="entry-title">Spotify on foobar2000</h2>
  
-  </header>
-  <footer class="post-info">
-    <abbr class="published" title="2016-07-23T02:11:00-04:00">Sat 23 July 2016</abbr>
-    <address class="vcard author">
-      by           <a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
-    </address>
-  </footer><!-- /.post-info -->
-  <div class="entry-content">
-    <p><strong>Update as of 1/25/2017</strong>: This post seems to be getting more attention than I expected, so I'd like to clear some things up. First, I'm not the developer of this plugin! The real developer abandoned it in 2011, and the updates to libspotify, foobar2000, and Windows in the interim left the plugin broken. I did fix it up, but pretty much all I did was update the libraries involved and update the project for Visual Studio 2015. The true credit goes to Chris West for creating the plugin.</p>
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2016-07-23T02:11:00-04:00">Sat 23 July 2016</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/programming.html">Programming</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p><strong>Update as of 1/25/2017</strong>: This post seems to be getting more attention than I expected, so I'd like to clear some things up. First, I'm not the developer of this plugin! The real developer abandoned it in 2011, and the updates to libspotify, foobar2000, and Windows in the interim left the plugin broken. I did fix it up, but pretty much all I did was update the libraries involved and update the project for Visual Studio 2015. The true credit goes to Chris West for creating the plugin.</p>
 <p>Secondly, <strong>This plugin will almost certainly not survive the year</strong>. As I mention in this article, Spotify has discontinued Libspotify, and states that it will be shut down some point this year. It hasn't happened yet, and for all I know it could happen at the end of the year, but this plugin's days are numbered. Our only hope is that Spotify claims that they'll be releasing a replacement desktop API to replace Libspotify. This hasn't happened yet, and it might not happen before Libspotify is shut down. But as far as I know, there's nothing anyone who doesn't work at Spotify can do about this.</p>
 <p>Finally, I've added a link to a fork of my fork of a fork of the original project. This fork is by a far more experienced foobar2000 developer than I, and it's probably what you're going to want to go with. This developer also recognizes that this plugin may be a lost cause thnks to Spotify's poor API management, but at least there's album art now!</p>
 <p><strong>End of update</strong> </p>
@@ -72,7 +79,7 @@
 <p>Right - the original purpose of this.</p>
 <p>What I found was the best is to just download <a href="http://www.foobar2000.org/components/view/foo_uie_lyrics3">this plugin</a>, which displays a pane with lyrics synced to the song's current position. It looks for local lyrics though, so it's only useful with <a href="https://github.com/tripod31/foo_lyricsource">this plugin</a>, which fetches lyrics from a variety of sources.</p>
 <p>That's it. Good luck, and have fun!</p>
-  </div><!-- /.entry-content -->
+	</div><!-- /.entry-content -->
 </section>
 
 <div id="disqus_thread"></div>
@@ -95,25 +102,26 @@
     })();
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-    </div>
-    <footer id="contentinfo" class="body container">
-        <address id="about" class="vcard body">
-            <p>
-                Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">anime-nigh</span>t.com</span>
-            </p>
-            <p>
-                Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
-            </p>
-        </address><!-- /#about -->
-    </footer><!-- /#contentinfo -->
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-        })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-        ga('create', 'UA-51284727-1', 'cpancake.github.io');
-        ga('send', 'pageview');
-    </script>
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
 </body>
 </html>

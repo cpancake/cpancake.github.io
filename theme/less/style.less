@@ -1,118 +1,249 @@
-@import (reference) "bootstrap/variables.less";
 @import "monokai.less";
+
+@background-color: #fff;
+@font-color: #333;
+@link-color: #41547F;
+
+@body-width: 1080px;
+@body-min-width: 1100px;
+@body-max-width: (@body-min-width - 1);
+@header-width: 200px;
+@content-width: (@body-width - @header-width);
+
+@font-size: 16px;
+@h2-size: (@font-size + 8px);
 
 body
 {
-	background: #333;
-	color: #fff;
+	background: @background-color;
+	color: @font-color;
+	font-family: "Taviraj", "Georgia", serif;
+	font-size: @font-size;
+
+	@media(min-width: @body-min-width)
+	{
+		width: @body-width;
+		margin: auto;
+	}
 }
 
-header
+a
 {
-	font-family: @font-family-header;
-	width: 100%;
+	text-decoration: none;
+	color: @link-color;
+	display: inline-block;
+	border-bottom: 1px dotted @link-color;
+	line-height: 100%;
 
-	.header-align-container
+	&:hover
 	{
-		text-align: right;
-		color: #333;
-		color: rgba(255, 255, 255, 1.0);
-		text-shadow: 1px 1px 4px #000;
+		color: darken(@font-color, 20%);
+	}
+}
 
+h2
+{
+	margin-bottom: 0;
+	font-size: @h2-size;
+}
+
+h1 a, h2 a
+{
+	color: @font-color;
+	border: none;
+}
+
+.header
+{
+	h1
+	{
+		font-family: "Montserrat", "Helvetica", "Arial", sans-serif;
+		font-weight: bold;
+
+		@media(min-width: @body-min-width)
+		{
+			text-align: right;
+			word-spacing: @header-width;
+		}
+		
+		a
+		{
+			color: #41547F;
+		}
+	}
+
+	@media(min-width: @body-min-width)
+	{
+		width: @header-width;
+		float: left;
+		position: fixed;
+	}
+
+	@media(max-width: @body-max-width)
+	{
 		h1
 		{
-			margin-bottom: 0;
+			text-align: center;
+			word-spacing: normal;
 		}
-		h3
+
+		width: 100%;
+	}
+}
+
+nav
+{
+	ul
+	{
+		padding: 0;
+		list-style: none;
+	}
+
+	li
+	{
+		@media(min-width: @body-min-width)
 		{
-			font-size: 16px;
-			margin-top: 0;
+			text-align: right;
+		}
+	}
+
+	a
+	{
+		font-size: @font-size + 2px;
+		color: lighten(@font-color, 10%);
+	}
+
+	@media(max-width: @body-max-width)
+	{
+		text-align: center;
+
+		li
+		{
+			display: inline;
+			padding-right: 30px;
+			line-height: 200%;
 		}
 	}
 }
-header.header-flex
+
+.container
 {
-	display: flex;
-	justify-content: center;
-}
-header#banner
-{
-	text-align: center;
+	float: right;
+
+	@media(min-width: @body-min-width)
+	{
+		width: @content-width;
+	}
+
+	padding-left: 50px;
+	box-sizing: border-box;
+
+	@media(max-width: @body-max-width)
+	{
+		padding: 0 50px;
+	}
 }
 
-.uilink
+footer
 {
-	color: #fff;
-}
-.uilink:hover
-{
-	text-decoration: none;
-	color: darken(#fff, 20%);
+	font-size: @font-size - 2px;
+	margin-top: 20px;
+	padding: 20px 0 20px 0;
+	border-top: 1px solid darken(@background-color, 10%);
+
+	p
+	{
+		margin-top: 0;
+		margin-bottom: 5px;
+	}
+
+	.email-obscure 
+	{
+		display: none;
+	}
 }
 
-.container.main-container
-{
-	background: @main-section-bg;
-	color: @text-color;
-	padding: 20px;
-}
-
-nav#menu
-{
-	text-align: center;
-}
-
-nav#menu li
-{
-	font-family: @font-family-header;
-	font-weight: bold;
-	display: inline;
-	padding: 20px;
-	font-size: 16pt;
-}
-
-footer#contentinfo
-{
-	padding-top: 20px;
-}
-
-.email-obscure
-{
-	display: none;
-}
-
-.hentry header h2
-{
-	display: inline;
-}
-
-.hentry header h2 a:hover
+abbr
 {
 	text-decoration: none;
 }
 
-header .published
+article
 {
-	margin-left: 10px;
+	&.hentry
+	{
+		margin-top: 20px;
+
+		h2.entry-title
+		{
+			padding-right: 10px;
+			margin-bottom: 0;
+			display: inline;
+			font-style: italic;
+		}
+
+		div.entry-content p
+		{
+			margin: 0;
+		}
+
+		abbr
+		{
+			font-size: @font-size - 2px;
+			font-style: italic;
+		}
+	}
 }
 
-.entry-title
+section.body
 {
-	margin: 0;
-}
+	.article-header h2
+	{
+		margin-bottom: 0;
+	}
 
-.vcard.author
-{
-	display: inline;
-}
+	.post-info 
+	{
+		abbr, address
+		{
+			display: inline-block;
+		}
 
-.entry-content
-{
-	padding-top: 10px;
+		font-size: @font-size - 2px;
+		font-style: italic;
+
+		padding-bottom: 1em;
+		border-bottom: 1px solid darken(@background-color, 10%);
+	}
 
 	img
 	{
 		margin: auto;
 		display: block;
+		border: 1px solid darken(@background-color, 20%);
+		padding: 5px;
 	}
+
+	.videobox video
+	{
+		width: 90%;
+		height: 90%;
+		padding: 5px;
+		border: 1px solid darken(@background-color, 20%);
+		margin: auto;
+		display: block;
+	}
+
+	p
+	{
+		font-size: @font-size;
+		line-height: 200%;
+	}
+}
+
+pre
+{
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	padding: 10px;
 }

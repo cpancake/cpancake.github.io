@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+			<title>Migrating Perforce to Plastic - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css?13e70f0d">
+
+
+
+		<meta name="tags" contents="programming" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">Migrating Perforce to Plastic</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-03-29T16:20:00-04:00">Wed 29 March 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/programming.html">Programming</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>I was tasked the other day with moving a project from Perforce to Plastic. There doesn't seem to be an official way of doing this, despite how much Plastic seems to be pushing for Perforce developers to move to the system. I could've just copied the files to a Plastic workspace and committed them, but I wanted to preserve the history too.</p>
+<p>I managed to find a solution using an intermediary Git repository. You'll need:</p>
+<ul>
+<li>Perforce (with p4 in the PATH)</li>
+<li>Git</li>
+<li>Python</li>
+<li>Plastic (with cm in the PATH)</li>
+</ul>
+<h2>Perforce -&gt; Git</h2>
+<p>First, we need to set up git-p4. It's an <a href="https://git-scm.com/docs/git-p4">official Git command</a>, but for me it wasn't included in the distribution of Git I had. Instead, I had to <a href="https://raw.githubusercontent.com/git/git/master/git-p4.py">download the script directly</a> and call it using <code>python &lt;path to git-p4.py&gt;</code>. If this is the case for you, substitute that for <code>git p4</code>.</p>
+<p>Next, you're going to need to set some environment variables:</p>
+<div class="highlight"><pre><span class="k">set</span> <span class="nv">P4PORT</span><span class="o">=</span><span class="p">&lt;</span><span class="n">domain</span> name and port to perforce server<span class="p">&gt;</span>
+<span class="n">set</span> P<span class="m">4</span>USER<span class="o">=</span><span class="p">&lt;</span><span class="n">username</span><span class="p">&gt;</span>
+<span class="n">set</span> P<span class="m">4</span>PASSWD<span class="o">=</span><span class="p">&lt;</span><span class="n">password</span>&gt;
+</pre></div>
+
+
+<p>I ran into some issues with Unicode files, and setting the charset seemed to work for me, so you might want to set this too:</p>
+<div class="highlight"><pre><span class="k">set</span> <span class="nv">P4CHARSET</span><span class="o">=</span>utf<span class="m">8</span>
+</pre></div>
+
+
+<p>Before you import things to Perforce, you'll want to fix some file types. Git can't understand the "apple" file type in Perforce. It seems just changing every file in Perforce with an "apple" type to "binary" works fine. </p>
+<p>Now it's time to move it to create a Git repo from Perforce:</p>
+<div class="highlight"><pre>git p<span class="m">4</span> clone <span class="p">&lt;</span><span class="n">depot</span> path&gt;@all <span class="p">&lt;</span><span class="n">path</span> to new git repo&gt;
+</pre></div>
+
+
+<p>For me, that meant:</p>
+<div class="highlight"><pre>git p<span class="m">4</span> clone <span class="n">//Gladiator/main@all</span> Gladiator-git
+</pre></div>
+
+
+<p>Once you've done this, you should have a representation of your Perforce project in Git.</p>
+<h2>Git -&gt; Plastic</h2>
+<p>Plastic has official support for importing from Git. First, you export your git repository using <code>fast-export</code>:</p>
+<div class="highlight"><pre>git fast-export --all -M --signed-tags<span class="o">=</span>strip --tag-of-filtered-object<span class="o">=</span>drop &gt; ..<span class="n">/git-fast-export.dat</span>
+</pre></div>
+
+
+<p>Now you can simply import to Plastic with <code>fast-import</code>:</p>
+<div class="highlight"><pre>cm fast-import <span class="p">&lt;</span><span class="n">workspace</span>&gt;@<span class="p">&lt;</span><span class="n">server</span>&gt; ..<span class="n">/git-fast-export.dat</span>
+</pre></div>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "Migrating Perforce to Plastic";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
