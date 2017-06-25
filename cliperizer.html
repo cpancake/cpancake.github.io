@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>Here's Some Menus - the andrew rogers webzone</title>
+			<title>Cliperizer - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
 		<link rel="stylesheet" href="/theme/css/style.min.css?a55fa1df">
 
 
 
-		<meta name="tags" contents="projects" />
+		<meta name="tags" contents="programming" />
 
 </head>
 
@@ -33,20 +33,26 @@
 		<div class="content">
 <section id="content" class="body">
 	<div class="article-header">
-		<h2 class="entry-title">Here's Some Menus</h2>
+		<h2 class="entry-title">Cliperizer</h2>
  
 	</div>
 	<div class="post-info">
-		<abbr class="published" title="2016-09-25T18:53:00-04:00">Sun 25 September 2016</abbr>
+		<abbr class="published" title="2017-06-25T08:09:00-04:00">Sun 25 June 2017</abbr>
 		<address class="vcard author">
 			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
 		</address>
 		in <a href="/category/projects.html">Projects</a>
 	</div><!-- /.post-info -->
 	<div class="entry-content">
-		<p>I put some physical menus online. That's pretty much it.</p>
-<p>If you're a college student in the Worcester area, you might find it useful.</p>
-<p><a href="http://cpancake.me/menus/">http://cpancake.me/menus/</a></p>
+		<p>Nobody has long attention spans anymore. I certainly don't, at least. Consuming content in fifteen seconds or less is the new hot thing, and I've got just the tool for you!</p>
+<p>Introducing Cliperizer, the helpful tool for making clips out of longer videos! The process is pretty simple: load up a video and start playing through it. To start a clip, press the "1" key. To end a clip, press the "2" key. Then, once you're done, you can render out each clip as a seperate video, or concatenate them together to make a montage.</p>
+<p>You'll need <code>ffmpeg</code> in your PATH. You might need VLC installed too. I know this works on Windows, not sure about Mono.</p>
+<p><img alt="Cliperizer" src="/images/cliperizer.jpg" /></p>
+<ul>
+<li><a href="https://github.com/cpancake/Cliperizer/releases">View releases.</a></li>
+<li><a href="https://github.com/cpancake/Cliperizer/releases">View source code.</a></li>
+</ul>
+<p>I actually made it a long time ago (around October of last year), but I figured I should write about it at some point.</p>
 	</div><!-- /.entry-content -->
 </section>
 
@@ -57,7 +63,7 @@
     var disqus_config = function() {
     	this.page.url = "http://" + window.location.hostname + window.location.pathname;
     	this.page.identifier = this.page.url;
-    	this.page.title = "Here's Some Menus";
+    	this.page.title = "Cliperizer";
     };
 
     (function() {
