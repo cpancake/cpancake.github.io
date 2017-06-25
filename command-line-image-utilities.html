@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+			<title>Command Line Image Utilities - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css?13e70f0d">
+
+
+
+		<meta name="tags" contents="programming" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">Command Line Image Utilities</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-06-25T05:55:00-04:00">Sun 25 June 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/projects.html">Projects</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>I often need to perform batch operations on large groups of images. Most of the time, I can do these manually, but that's often a lot of work. So I've written some simple command-line tools to automate the process.</p>
+<p>All of these tools are written in Node. They could probably be re-written in Bash if you had the time, but I don't know Bash well-enough and I don't use Linux anyways. For daily use, I put these in a folder in my PATH with batch files containing the following:</p>
+<div class="highlight"><pre>@node &lt;path to script&gt; %*
+</pre></div>
+
+
+<p>Most of these require external packages, which you can get by running <code>npm install &lt;name&gt;</code> in whatever folder you put these in.</p>
+<h2>makesmaller</h2>
+<p>This is a utility for finding files that are larger than they need to be, and making them smaller. The metric for "larger than it needs to be" is 600K. I've chosen this because most files I deal with end up under 600K after this tool runs. It could be improved to avoid re-encoding files, which happens occasionally.</p>
+<p>As you can tell, I'm not exactly an image quality snob. I much prefer hard drive space.</p>
+<p>The process of encoding is done with <code>ffmpeg</code>, which needs to be in your path. It encodes every JPEG and PNG file in the directory you run it from into a JPEG with <code>-q:v</code> set to 2 and a width of 1000, preserving the aspect ratio.</p>
+<p><a href="https://gist.github.com/cpancake/5e0a873c4003e5ad8213e90e773c707b#file-makesmaller-js">View makesmaller.js on Gist.</a></p>
+<p>This doesn't require any external packages.</p>
+<h2>dechanify</h2>
+<p>We've all been there. You've gone to an imageboard and downloaded a bunch of files, and now you've got a ton of files named with post IDs and that's no good. </p>
+<p><code>dechanify</code> renames all of the files in a directory to their SHA-1 hashes. It's not just applicable to downloading images from an imageboard - if there's any situation where the filenames don't hold important information and you're annoyed because they're all in different formats, this is the tool for you.</p>
+<p>By default, this will only rename files whose names don't appear to be hashes - so if a file is named <code>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.jpg</code>, it won't be renamed, because that's <em>technically</em> a valid SHA-1 hash. If you want to be absolutely sure, run it with the <code>all</code> parameter (like <code>node dechanify.js all</code>).</p>
+<p><a href="https://gist.github.com/cpancake/bf7db60c4fc04d66a70ed3814fb77075#file-dechanify-js">View dechanify.js on Gist.</a></p>
+<p>This requires <code>graceful-fs</code>, to avoid going over the limit on open file handles.</p>
+<h2>dedup</h2>
+<p>There's a lot of image de-duplication tools out there. Sometimes I use one of these, because perceptual hashing does a damn good job of finding duplicates. Unfortunately, this takes a lot of time to compute and then you have to go through and check every match to see if it's truly a duplicate.</p>
+<p>What I'm looking for is a tool that checks only <em>exact</em> duplicates - files that are byte-for-byte identical. I wrote this tool because I noticed that <code>dechanify</code> kept telling me I had files that had the same hash, and there's almost no way that could happen if the files weren't exactly the same.</p>
+<p>By default, this tool only outputs a list of the duplicate files. If you want, you can go through this list and decide which ones to keep and which ones to delete. If you don't care for that, you can run it with the <code>keep-first</code> parameter (like <code>node dedup.js keep-first</code>), which'll delete all matches except for the first one found.</p>
+<p><em>Note: I'm aware Google has successfully demonstrated a collision attack on SHA-1. But I'm assuming nobody slipped a file onto my hard drive with the sole purpose of confusing my image de-duplication tool.</em></p>
+<p><a href="https://gist.github.com/cpancake/ea6a2527eaffa5f0f331dcad534ba1bd#file-dedup-js">View dedup.js on Gist.</a></p>
+<p>This requires three packages: <code>graceful-fs</code>, <code>single-line-log</code>, and <code>async</code>.</p>
+<h2>sequencer</h2>
+<p>Sometimes I'll get files whose names are in order, but only using a natural sort - that is, 1.jpg, 2.jpg, 3.jpg ... 12.jpg, 13.jpg. This works fine in most cases (such as using Windows Explorer), but some tools mess it up (I'm looking at you, Dropbox for Android). Even worse is when you have files that <em>aren't</em> in a sequence, but that belong in a sequence. </p>
+<p>This tool is meant to solve that. For the first case, it applies a natural sort but outputs the filenames either padded to three characters (001.jpg), or padded to the number of characters in the highest number of files (so if the last file is 1293.jpg, the first file will be 0001.jpg). This'll give it the correct sort in programs that don't use a natural sort.</p>
+<p>For the second case, you can optionally have it order by timestamp. So if you added the files to the folder in order (for example, downloading them from a website in the order they appeared), this'll probably give you the correct order. To enable this, run it with the <code>time</code> parameter (like <code>node sequencer.js time</code>).</p>
+<p>By default, this will only print the correct sequence - this gives you a chance to check to make sure it came out right, to avoid giving the files an even worse sequence. When you've looked it over, re-run it with the <code>commit</code> parameter (like <code>node sequencer.js commit</code> or <code>node sequencer.js time commit</code>).</p>
+<p><a href="https://gist.github.com/cpancake/a27347b0871eb2021faf8ab9452a91cc#file-sequencer-js">View sequencer.js on Gist.</a></p>
+<p>This doesn't require any external packages.</p>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "Command Line Image Utilities";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
