@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+			<title>ImageTool - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
+
+
+
+		<meta name="tags" contents="programming" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/games.html">Games</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">ImageTool</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-06-26T19:55:00-04:00">Mon 26 June 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/projects.html">Projects</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>It's happened again - I've made a tool for image organization. This tool is actually the oldest of the bunch - I don't know how far back this current version goes (at least a year), but this tool itself is a rewrite of an older one I made in 2013. To be frank, I don't know for sure how old this is.</p>
+<p>This time, it's a tool for sorting things - specifically images, though it has rudimentary sorting abilities for folders of images (which I've called "comics," because I don't see anyone using it for something different). It gives you the ability to select a folder and decide which images you want to keep and which images you want to discard, quickly and easily.</p>
+<ul>
+<li><a href="https://github.com/cpancake/ImageTool/releases">View releases.</a></li>
+<li><a href="https://github.com/cpancake/ImageTool">View source code.</a></li>
+</ul>
+<p>ImageTool is written in C# and uses VLC for displaying MP4s and WebMs (which, being used as replacements for animated GIFs, sometimes end up alongside images). I know it works on Windows, you'll have to find out yourself if it works on Mono (I'm not confident).</p>
+<p>When you launch the tool, it'll open up a list of all your current sorting projects. These projects are stored in <code>%APPDATA%\imagetool</code>, and contain all the information about which images you've chosen to keep. To start sorting a folder, click the plus button in the bottom left - this will open up the "New Sort Project" window, where you can choose the directory, the name of the project, and the type. "Images" will sort individual images in the folder, while "Comics" will let you choose which folders of images to keep. These are not recursive (i.e. if you have <code>images/images2</code> and you sort <code>images</code>, the files in <code>images2</code> won't be included).</p>
+<p>When you open up a project, you'll see a window with an image displayed prominently, and buttons along the bottom. "Yes" and "No" are your decisions on each file (you can press "W" and "S" respectively instead). "Open" opens the file in whatever your default image viewer is (shortcut is "O"). "Previous" goes back to the last image you sorted, if there is one (shortcut is "A"). The "Finalize" button deletes all the files you sorted as "No" and deletes the sorting project. You can guess what "Cancel" does.</p>
+<p>When files are sorted as "Yes," they remain in the folder you are sorting, and are simply ignored by the tool. When files are sorted as "No," they're placed in a folder called <code>.delete</code> in the directory you are sorting. That means that files you chose "No" on aren't deleted until you finalize the project.</p>
+<p>Comic sort works differently. When you open up a comic sorting project, it displays a list of all the comics in the folder, and your decision on each one (if you've made a decision). You can double click on any comic to view it (which will open up the first page of it in your default image viewer). "Finalize" functions the same.</p>
+<p>I don't think there will be any more substantial updates to this tool; it's basically as good as I need it. If you have any suggestions, let me know.</p>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "ImageTool";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
