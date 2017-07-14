@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>Richard 1.0 - Rant's New Scripting Engine - the andrew rogers webzone</title>
+		<title>Richard 1.0 - Rant's New Scripting Engine - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
-
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
 
 
 		<meta name="tags" contents="programming" />
@@ -49,7 +49,7 @@
 		<p>Rant 2.0 is almost here, and it launches with a new scripting language I wrote called Richard! We're still ironing out the bugs and writing the documentation and the standard library, but here's a post describing most of what Richard is about.</p>
 <h2>The History of Richard</h2>
 <p>Let's look back to Rant 1.0, all those months ago. Rant 1.0 had a syntax for simple arithmetic operations. This supported basic math operations as well as variables. A simple arithmetic expression would look like this:</p>
-<div class="highlight"><pre>`a = 10; a += 5; a` # 15
+<div class="highlight"><pre><span></span>`a = 10; a += 5; a` # 15
 </pre></div>
 
 
@@ -59,7 +59,7 @@
 <p>After a lot of hard work and spaghetti code, Richard was committed in <a href="https://github.com/TheBerkin/Rant/commit/901be7f109701df7711586338d6b94e9d39f17e5">901be7f</a>. We're still working out the bugs and adding some new features.</p>
 <h2>The Basics</h2>
 <p>Richard is pretty similar to Javascript, if Javascript was smaller, less featureful, and written by someone who had never written a programming language before. It runs within Rant, and is contained within a [@ ... ] tag:</p>
-<div class="highlight"><pre>[@ 2 + 2 ]
+<div class="highlight"><pre><span></span>[@ 2 + 2 ]
 </pre></div>
 
 
@@ -127,7 +127,7 @@
 <h3>Statements</h3>
 <p>There are a few control flow statements in Richard.</p>
 <p><strong>if</strong> statements, along with their companion <strong>else</strong> statements, are a way of conditionally executing a specified block of code. You use them like you do in any other language:</p>
-<div class="highlight"><pre><span class="k">if</span><span class="p">(</span><span class="nb">true</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="nb">true</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="k">return</span> <span class="s">&quot;It&#39;s true!&quot;</span><span class="p">;</span>
 <span class="p">}</span>
@@ -139,7 +139,7 @@
 
 
 <p><strong>while</strong> statements are, again, the same as they are in every language since C:</p>
-<div class="highlight"><pre><span class="n">x</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
 <span class="k">while</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="n">x</span><span class="o">--</span><span class="p">;</span>
@@ -150,7 +150,7 @@
 
 <p><strong>for</strong> statements are different! They're actually <code>for..in</code> statements, like in Javascript. The reasoning is that there are very few times that you ever need to use a for loop in a way that's not just iterating over something from beginning to end, and if you want to do that, you can use a while loop.</p>
 <p>You can use a <code>for..in</code> loop to iterate over lists or objects:</p>
-<div class="highlight"><pre><span class="n">x</span> <span class="o">=</span> <span class="s">&quot;this&quot;</span><span class="p">,</span> <span class="s">&quot;is&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">,</span> <span class="s">&quot;string&quot;</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="s">&quot;this&quot;</span><span class="p">,</span> <span class="s">&quot;is&quot;</span><span class="p">,</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">,</span> <span class="s">&quot;string&quot;</span><span class="p">;</span>
 
 <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="n">in</span> <span class="n">x</span><span class="p">)</span>
 <span class="p">{</span>
@@ -177,11 +177,11 @@
 <p>There isn't documentation for the standard library yet (I haven't written the extension for Constitution), but every function has tests, and you can take a look at those.</p>
 <h2>Sample Program</h2>
 <p>I'm too lazy to write my own sample program, but here's one Berkin wrote:</p>
-<div class="highlight"><pre><span class="p">{</span>
+<div class="highlight"><pre><span></span><span class="p">{</span>
   <span class="kd">var</span> <span class="nx">Select</span> <span class="o">=</span>
   <span class="p">{</span>
     <span class="err">#</span> <span class="nx">filter</span><span class="p">(</span><span class="nx">condition</span><span class="p">(</span><span class="nx">current</span><span class="p">))</span>
-    <span class="nx">where</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">filter</span><span class="p">)</span> <span class="o">=&gt;</span>
+    <span class="nx">where</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">filter</span><span class="p">)</span> <span class="p">=&gt;</span>
     <span class="p">{</span>
       <span class="kd">var</span> <span class="nx">results</span> <span class="o">=</span> <span class="p">[];</span>
       <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">lst</span><span class="p">)</span>
@@ -192,7 +192,7 @@
       <span class="k">return</span> <span class="nx">results</span><span class="p">;</span>
     <span class="p">},</span>
     <span class="err">#</span> <span class="nx">accumulator</span><span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span>
-    <span class="nx">concat</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">accumulator</span><span class="p">)</span> <span class="o">=&gt;</span>
+    <span class="nx">concat</span><span class="o">:</span> <span class="p">(</span><span class="nx">lst</span><span class="p">,</span> <span class="nx">accumulator</span><span class="p">)</span> <span class="p">=&gt;</span>
     <span class="p">{</span>
       <span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;&quot;</span><span class="p">;</span>
       <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">lst</span><span class="p">)</span>
@@ -205,10 +205,10 @@
 
   <span class="k">return</span> <span class="nx">Select</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span>
     <span class="nx">Select</span><span class="p">.</span><span class="nx">where</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span>
-    <span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="p">(</span><span class="nx">x</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
       <span class="k">return</span> <span class="nx">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">;</span>
     <span class="p">}),</span>
-    <span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+    <span class="p">(</span><span class="nx">current</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
       <span class="k">if</span> <span class="p">(</span><span class="nx">current</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="nx">current</span> <span class="o">~=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">;</span>
       <span class="nx">current</span> <span class="o">~=</span> <span class="nx">next</span><span class="p">;</span>
       <span class="k">return</span> <span class="nx">current</span><span class="p">;</span>

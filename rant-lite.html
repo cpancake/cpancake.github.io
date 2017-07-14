@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>Rant Lite (a very bad idea) - the andrew rogers webzone</title>
+		<title>Rant Lite (a very bad idea) - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
-
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
 
 
 		<meta name="tags" contents="programming" />
@@ -47,13 +47,13 @@
 	</div><!-- /.post-info -->
 	<div class="entry-content">
 		<p>For once, I finally have a project where I want to use Rant instead of just contributing to it. The problem is that this project is written in Javascript - specifically, browser-based Javascript - so I can't use Rant out of the box. So I thought I'd try out JSIL, a tool that converts compiled IL code (.NET assemblies) into Javascript. How bad could it be?</p>
-<p><img alt="Pretty bad." src="/images/rant-lite-1.png" /></p>
+<p><img alt="Pretty bad." src="/images/rant-lite-1.png"></p>
 <p>If you don't think nearly 25MB of scripts is ridiculous, you probably don't do much web dev. jQuery, clocking in at ~82kb minified, is considered hefty. This size was just unmanageable. So I thought "Well, maybe if I minify it?"</p>
-<p><img alt="Erm, sort of." src="/images/rant-lite-2.png" /></p>
+<p><img alt="Erm, sort of." src="/images/rant-lite-2.png"></p>
 <p>Well, that kind of worked. It squeezed out about 5MB, which is alright. It's still not good enough. So I tried gzipping it.</p>
-<p><img alt="Woop!" src="/images/rant-lite-3.png" /></p>
+<p><img alt="Woop!" src="/images/rant-lite-3.png"></p>
 <p>I'd prefer smaller, but 1.4MB is good enough. But then the question arose: how am I going to get it to clients? I don't want the server to have to gzip 19MB of content on every request, and it should be loaded during the asset loading stage anyways so that the page doesn't hang. It was then that I came up with a very bad idea: I was already using browserify, which has a ported version of zlib. I wonder...</p>
-<div class="highlight"><pre><span class="kd">function</span> <span class="nx">extractJsz</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">extractJsz</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
 <span class="p">{</span>
   <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">zlib</span><span class="p">.</span><span class="nx">gunzipSync</span><span class="p">(</span><span class="k">new</span> <span class="nx">Uint8Array</span><span class="p">(</span><span class="nx">file</span><span class="p">));</span>
   <span class="kd">var</span> <span class="nx">script</span> <span class="o">=</span> <span class="nx">Utf8ArrayToStr</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
@@ -75,59 +75,59 @@
 <p>I went with the second option, because I'm lazy. I put together a PEG.js grammar, wrote a loader for rantpkg files, and a really lazy runtime. And yes, it's recursive. I'm sorry.</p>
 <p>The result is a clone of Rant that only supports queries, blocks, and block weights. Because as far as I can tell, that's all I need. It only supports loading rantpkg files, since it's easier than trying to write a new dictionary format parser in Javascript. And it doesn't support multiple queries on the first item in a block, because I fucked up the grammar and I'll fix it later damn it.</p>
 <p>The resulting PEG.js grammar looks like this:</p>
-<div class="highlight"><pre><span class="nx">rant</span>
-  <span class="o">=</span> <span class="nx">item</span><span class="o">*</span>
+<div class="highlight"><pre><span></span><span class="nc">rant</span>
+  <span class="o">=</span> <span class="nc">item</span><span class="o">*</span>
 
-<span class="nx">item</span>
-  <span class="o">=</span> <span class="nx">block</span>
-  <span class="o">/</span> <span class="nx">query</span>
-  <span class="o">/</span> <span class="nx">t</span><span class="o">:</span><span class="nx">text_acceptable</span><span class="o">+</span> <span class="nx">s</span><span class="o">:</span><span class="nx">space</span><span class="o">?</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span> <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="nx">value</span><span class="o">:</span> <span class="nx">t</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="nx">s</span> <span class="o">?</span> <span class="s1">&#39; &#39;</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">}</span> <span class="p">}</span>
-  <span class="o">/</span> <span class="nx">space</span> <span class="p">{</span> <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="p">;</span> <span class="p">}</span>
+<span class="nc">item</span>
+  <span class="o">=</span> <span class="nc">block</span>
+  <span class="o">/</span> <span class="nc">query</span>
+  <span class="o">/</span> t:text_<span class="nc">acceptable</span>+ s:<span class="nc">space</span>? { <span class="nc">return</span> { <span class="nc">type</span>: &#39;<span class="nc">text</span>&#39;, <span class="nc">value</span>: t.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span> + <span class="p">(</span>s ? &#39; &#39; : &#39;&#39;<span class="p">)</span> } }
+  <span class="o">/</span> <span class="nc">space</span> { <span class="nc">return</span> &#39; &#39;<span class="c1">; }</span>
 
-<span class="nx">block</span>
-  <span class="o">=</span> <span class="s2">&quot;{&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">first_weight</span><span class="o">:</span><span class="nx">block_weight</span><span class="o">?</span> <span class="nx">first_item</span><span class="o">:</span><span class="nx">block_item</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">rest</span><span class="o">:</span><span class="p">(</span><span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;|&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">weight</span><span class="o">:</span><span class="nx">block_weight</span><span class="o">?</span> <span class="nx">block_item</span><span class="o">*</span><span class="p">)</span><span class="o">*</span> <span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;}&quot;</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">items</span> <span class="o">=</span> <span class="cp">[</span> <span class="nx">first_item</span> <span class="cp">]</span><span class="p">;</span>
-    <span class="kd">var</span> <span class="nx">weights</span> <span class="o">=</span> <span class="cp">[</span><span class="nx">first_weight</span> <span class="o">?</span> <span class="nx">first_weight</span> <span class="p">:</span> <span class="mi">1</span><span class="cp">]</span><span class="p">;</span>
-    <span class="nx">items</span> <span class="o">=</span> <span class="nx">items</span><span class="p">.</span><span class="nx">concat</span><span class="p">(</span><span class="nx">rest</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">r</span><span class="p">)</span> <span class="p">{</span> <span class="nx">weights</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">r</span><span class="cp">[</span><span class="mi">3</span><span class="cp">]</span> <span class="o">||</span> <span class="mi">1</span><span class="p">);</span> <span class="k">return</span> <span class="nx">r</span><span class="cp">[</span><span class="nx">r.length</span> <span class="o">-</span> <span class="mi">1</span><span class="cp">]</span><span class="p">;</span> <span class="p">}));</span>
-    <span class="k">return</span> <span class="p">{</span>
-      <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;block&#39;</span><span class="p">,</span>
-      <span class="nx">items</span><span class="o">:</span> <span class="nx">items</span><span class="p">,</span>
-      <span class="nx">weights</span><span class="o">:</span> <span class="nx">weights</span>
-    <span class="p">}</span>
-  <span class="p">}</span>
+<span class="nc">block</span>
+  <span class="o">=</span> <span class="l">&quot;{&quot;</span> <span class="nc">space</span><span class="o">*</span> first_<span class="nc">weight</span>:block_<span class="nc">weight</span>? first_<span class="nc">item</span>:block_<span class="nc">item</span> <span class="nc">space</span><span class="o">*</span> <span class="nc">rest</span>:<span class="p">(</span><span class="nc">space</span><span class="o">*</span> <span class="l">&quot;|&quot;</span> <span class="nc">space</span><span class="o">*</span> <span class="nc">weight</span>:block_<span class="nc">weight</span>? block_<span class="nc">item</span><span class="o">*</span><span class="p">)</span><span class="o">*</span> <span class="nc">space</span><span class="o">*</span> <span class="l">&quot;}&quot;</span> {
+    <span class="nc">var</span> <span class="nc">items</span> <span class="o">=</span> <span class="p">[</span> first_<span class="nc">item</span> <span class="p">]</span><span class="c1">;</span>
+    <span class="nc">var</span> <span class="nc">weights</span> <span class="o">=</span> <span class="p">[</span>first_<span class="nc">weight</span> ? first_<span class="nc">weight</span> : <span class="o">1</span><span class="p">]</span><span class="c1">;</span>
+    <span class="nc">items</span> <span class="o">=</span> <span class="nc">items</span>.<span class="nc">concat</span><span class="p">(</span><span class="nc">rest</span>.<span class="nc">map</span><span class="p">(</span><span class="nc">function</span><span class="p">(</span>r<span class="p">)</span> { <span class="nc">weights</span>.<span class="nc">push</span><span class="p">(</span>r<span class="p">[</span><span class="o">3</span><span class="p">]</span> || <span class="o">1</span><span class="p">)</span><span class="c1">; return r[r.length - 1]; }));</span>
+    <span class="nc">return</span> {
+      <span class="nc">type</span>: &#39;<span class="nc">block</span>&#39;,
+      <span class="nc">items</span>: <span class="nc">items</span>,
+      <span class="nc">weights</span>: <span class="nc">weights</span>
+    }
+  }
 
-<span class="nx">block_weight</span>
-  <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;(&quot;</span> <span class="nx">space</span><span class="o">*</span> <span class="nx">w</span><span class="o">:</span><span class="nx">number</span> <span class="nx">space</span><span class="o">*</span> <span class="s2">&quot;)&quot;</span> <span class="nx">space</span><span class="o">*</span><span class="p">)</span> <span class="nx">space</span><span class="o">*</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">w</span><span class="p">.</span><span class="nx">value</span><span class="p">;</span> <span class="p">}</span>
+block_<span class="nc">weight</span>
+  <span class="o">=</span> <span class="p">(</span><span class="l">&quot;(&quot;</span> <span class="nc">space</span><span class="o">*</span> w:<span class="nc">number</span> <span class="nc">space</span><span class="o">*</span> <span class="l">&quot;)&quot;</span> <span class="nc">space</span><span class="o">*</span><span class="p">)</span> <span class="nc">space</span><span class="o">*</span> { <span class="nc">return</span> w.<span class="nc">value</span><span class="c1">; }</span>
 
-<span class="nx">block_item</span>
-  <span class="o">=</span> <span class="nx">query</span>
-  <span class="o">/</span> <span class="nx">a</span><span class="o">:</span><span class="nx">text_acceptable</span><span class="o">+</span> <span class="p">{</span> <span class="k">return</span> <span class="p">{</span><span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="nx">value</span><span class="o">:</span> <span class="nx">a</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="p">};</span> <span class="p">}</span>
+block_<span class="nc">item</span>
+  <span class="o">=</span> <span class="nc">query</span>
+  <span class="o">/</span> a:text_<span class="nc">acceptable</span>+ { <span class="nc">return</span> {<span class="nc">type</span>: &#39;<span class="nc">text</span>&#39;, <span class="nc">value</span>: a.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span> }<span class="c1">; }</span>
 
-<span class="nx">query</span>
-  <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;&lt;&quot;</span> <span class="nx">name</span><span class="o">:</span><span class="nx">acceptable</span> <span class="nx">subtype</span><span class="o">:</span><span class="p">(</span><span class="cp">[</span><span class="o">\</span><span class="nx">.</span><span class="cp">]</span><span class="nx">acceptable</span><span class="p">)</span><span class="o">?</span> <span class="nx">classes</span><span class="o">:</span><span class="p">(</span><span class="cp">[</span><span class="o">\-</span><span class="cp">]</span><span class="nx">name</span><span class="o">:</span><span class="nx">acceptable</span><span class="p">)</span><span class="o">*</span> <span class="s2">&quot;&gt;&quot;</span><span class="p">)</span> <span class="p">{</span> 
-      <span class="kd">var</span> <span class="nx">cs</span> <span class="o">=</span> <span class="nx">classes</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">c</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">c</span><span class="cp">[</span><span class="mi">1</span><span class="cp">]</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">);</span> <span class="p">});</span>
-      <span class="kd">var</span> <span class="nx">s</span> <span class="o">=</span> <span class="p">(</span><span class="nx">subtype</span> <span class="o">?</span> <span class="nx">subtype</span><span class="cp">[</span><span class="mi">1</span><span class="cp">]</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">);</span>
-      <span class="k">return</span> <span class="p">{</span> 
-        <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;query&#39;</span><span class="p">,</span> <span class="nx">name</span><span class="o">:</span> <span class="nx">name</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="nx">subtype</span><span class="o">:</span> <span class="nx">s</span><span class="p">,</span> <span class="nx">classes</span><span class="o">:</span> <span class="nx">cs</span>
-      <span class="p">};</span> 
-    <span class="p">}</span>
+<span class="nc">query</span>
+  <span class="o">=</span> <span class="p">(</span><span class="l">&quot;&lt;&quot;</span> <span class="nc">name</span>:<span class="nc">acceptable</span> <span class="nc">subtype</span>:<span class="p">([</span>\.<span class="p">]</span><span class="nc">acceptable</span><span class="p">)</span>? <span class="nc">classes</span>:<span class="p">([</span>\-<span class="p">]</span><span class="nc">name</span>:<span class="nc">acceptable</span><span class="p">)</span><span class="o">*</span> <span class="l">&quot;&gt;&quot;</span><span class="p">)</span> { 
+      <span class="nc">var</span> <span class="nc">cs</span> <span class="o">=</span> <span class="nc">classes</span>.<span class="nc">map</span><span class="p">(</span><span class="nc">function</span><span class="p">(</span>c<span class="p">)</span> { <span class="nc">return</span> c<span class="p">[</span><span class="o">1</span><span class="p">]</span>.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span><span class="c1">; });</span>
+      <span class="nc">var</span> s <span class="o">=</span> <span class="p">(</span><span class="nc">subtype</span> ? <span class="nc">subtype</span><span class="p">[</span><span class="o">1</span><span class="p">]</span>.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span> : &#39;&#39;<span class="p">)</span><span class="c1">;</span>
+      <span class="nc">return</span> { 
+        <span class="nc">type</span>: &#39;<span class="nc">query</span>&#39;, <span class="nc">name</span>: <span class="nc">name</span>.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span>, <span class="nc">subtype</span>: s, <span class="nc">classes</span>: <span class="nc">cs</span>
+      }<span class="c1">; </span>
+    }
 
-<span class="nx">number</span>
-  <span class="o">=</span> <span class="nx">n</span><span class="o">:</span><span class="p">(</span><span class="cp">[</span><span class="mi">0</span><span class="o">-</span><span class="mi">9</span><span class="cp">]</span><span class="o">+</span><span class="p">(</span><span class="cp">[</span><span class="o">\</span><span class="nx">.</span><span class="cp">][</span><span class="mi">0</span><span class="o">-</span><span class="mi">9</span><span class="cp">]</span><span class="o">+</span><span class="p">)</span><span class="o">?</span><span class="p">)</span> <span class="p">{</span> 
-      <span class="kd">var</span> <span class="nx">number</span> <span class="o">=</span> <span class="nx">n</span><span class="cp">[</span><span class="mi">0</span><span class="cp">]</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="nx">n</span><span class="cp">[</span><span class="mi">1</span><span class="cp">]</span> <span class="o">?</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="nx">n</span><span class="cp">[</span><span class="mi">1</span><span class="cp">][</span><span class="mi">1</span><span class="cp">]</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">);</span>
-      <span class="k">return</span> <span class="p">{</span> 
-        <span class="nx">type</span><span class="o">:</span> <span class="s1">&#39;number&#39;</span><span class="p">,</span>
-        <span class="nx">value</span><span class="o">:</span> <span class="nb">parseFloat</span><span class="p">(</span><span class="nx">number</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-      <span class="p">}</span> 
-    <span class="p">}</span> 
+<span class="nc">number</span>
+  <span class="o">=</span> n:<span class="p">([</span><span class="o">0</span>-<span class="o">9</span><span class="p">]</span>+<span class="p">([</span>\.<span class="p">][</span><span class="o">0</span>-<span class="o">9</span><span class="p">]</span>+<span class="p">)</span>?<span class="p">)</span> { 
+      <span class="nc">var</span> <span class="nc">number</span> <span class="o">=</span> n<span class="p">[</span><span class="o">0</span><span class="p">]</span>.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span> + <span class="p">(</span>n<span class="p">[</span><span class="o">1</span><span class="p">]</span> ? &#39;.&#39; + n<span class="p">[</span><span class="o">1</span><span class="p">][</span><span class="o">1</span><span class="p">]</span>.<span class="nc">join</span><span class="p">(</span>&#39;&#39;<span class="p">)</span> : &#39;&#39;<span class="p">)</span><span class="c1">;</span>
+      <span class="nc">return</span> { 
+        <span class="nc">type</span>: &#39;<span class="nc">number</span>&#39;,
+        <span class="nc">value</span>: <span class="nc">parseFloat</span><span class="p">(</span><span class="nc">number</span>, <span class="o">10</span><span class="p">)</span>
+      } 
+    } 
 
-<span class="nx">acceptable</span>
-  <span class="o">=</span> <span class="cp">[</span><span class="nx">A</span><span class="na">-Za-z0</span><span class="o">-</span><span class="mi">9</span><span class="cp">]</span><span class="o">+</span>
+<span class="nc">acceptable</span>
+  <span class="o">=</span> <span class="p">[</span><span class="nc">A-Za-z0-9</span><span class="p">]</span>+
 
-<span class="nx">text_acceptable</span>
-  <span class="o">=</span> <span class="cp">[</span><span class="nx">A</span><span class="na">-Za-z0</span><span class="o">-</span><span class="mi">9</span><span class="o">!</span><span class="p">:;,</span><span class="o">\-\</span><span class="nx">.</span><span class="o">?</span><span class="s1">&#39;&quot;$%&amp;\*]</span>
+text_<span class="nc">acceptable</span>
+  <span class="o">=</span> <span class="p">[</span><span class="nc">A-Za-z0-9</span>!:<span class="c1">;,\-\.?&#39;&quot;$%&amp;\*]</span>
 
-<span class="s1">space = [ </span><span class="se">\n\t</span><span class="s1">]</span>
+<span class="nc">space</span> <span class="o">=</span> <span class="p">[</span> \n\t<span class="p">]</span>
 </pre></div>
 
 

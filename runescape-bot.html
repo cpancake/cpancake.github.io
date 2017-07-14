@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>I Made a RuneScape Bot - the andrew rogers webzone</title>
+		<title>I Made a RuneScape Bot - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
-
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
 
 
 		<meta name="tags" contents="projects" />
@@ -48,8 +48,8 @@
 		<p>I've gotten back into RuneScape recently - old school, of course. It's a good game to play when you're trying to pay attention to something else, because the entire game is about grinding. </p>
 <p>Something I've always hated with RuneScape is that there's no "Drop All of Type" option. If I'm grinding mining or something, and I get a bunch of ore, sometimes I just want to drop it all on the ground instead of having to head to the bank to deposit it. Sadly, this feature has never been added.</p>
 <p>So to fix this, I made a bot to do it. Here's a video:
-<div class="videobox">
-            <video width="960" height="540" preload="none" controls poster="None"><source src='/videos/dropbot.webm' type='video/webm; codecs=vp8, vorbis'></video></div></p>
+<span class="videobox">
+            <video width="960" height="540" preload="none" controls poster="None"><source src='/videos/dropbot.webm' type='video/webm; codecs=vp8, vorbis'></video></span></p>
 <p>It's actually pretty simple. The "Find Inventory Items" step just takes a screenshot of the RuneScape window, then seperates out the images of each item. It then filters out the background (just using a list of colors), and computes an average hash of the image for comparison with other items. The "Drop" step then finds all the items of a type, selects a random point on each item, and lerps between the item positions and simulates mouse clicks. That's basically it.</p>
 <p>I'm not releasing it yet because it's incredibly buggy and doesn't work with anything other than the desktop Old School RuneScape client with a member account running in the default size. Maybe I'll release it. Maybe not! I don't know.</p>
 	</div><!-- /.entry-content -->

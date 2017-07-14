@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>Migrating Perforce to Plastic - the andrew rogers webzone</title>
+		<title>Migrating Perforce to Plastic - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
-
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
 
 
 		<meta name="tags" contents="programming" />
@@ -56,37 +56,37 @@
 <h2>Perforce -&gt; Git</h2>
 <p>First, we need to set up git-p4. It's an <a href="https://git-scm.com/docs/git-p4">official Git command</a>, but for me it wasn't included in the distribution of Git I had. Instead, I had to <a href="https://raw.githubusercontent.com/git/git/master/git-p4.py">download the script directly</a> and call it using <code>python &lt;path to git-p4.py&gt;</code>. If this is the case for you, substitute that for <code>git p4</code>.</p>
 <p>Next, you're going to need to set some environment variables:</p>
-<div class="highlight"><pre><span class="k">set</span> <span class="nv">P4PORT</span><span class="o">=</span><span class="p">&lt;</span><span class="n">domain</span> name and port to perforce server<span class="p">&gt;</span>
-<span class="n">set</span> P<span class="m">4</span>USER<span class="o">=</span><span class="p">&lt;</span><span class="n">username</span><span class="p">&gt;</span>
-<span class="n">set</span> P<span class="m">4</span>PASSWD<span class="o">=</span><span class="p">&lt;</span><span class="n">password</span>&gt;
+<div class="highlight"><pre><span></span><span class="k">set</span> <span class="nv">P4PORT</span><span class="p">=&lt;</span>domain name and port to perforce server&gt;
+<span class="k">set</span> <span class="nv">P4USER</span><span class="p">=&lt;</span>username&gt;
+<span class="k">set</span> <span class="nv">P4PASSWD</span><span class="p">=&lt;</span>password&gt;
 </pre></div>
 
 
 <p>I ran into some issues with Unicode files, and setting the charset seemed to work for me, so you might want to set this too:</p>
-<div class="highlight"><pre><span class="k">set</span> <span class="nv">P4CHARSET</span><span class="o">=</span>utf<span class="m">8</span>
+<div class="highlight"><pre><span></span><span class="k">set</span> <span class="nv">P4CHARSET</span><span class="p">=</span>utf8
 </pre></div>
 
 
 <p>Before you import things to Perforce, you'll want to fix some file types. Git can't understand the "apple" file type in Perforce. It seems just changing every file in Perforce with an "apple" type to "binary" works fine. </p>
 <p>Now it's time to move it to create a Git repo from Perforce:</p>
-<div class="highlight"><pre>git p<span class="m">4</span> clone <span class="p">&lt;</span><span class="n">depot</span> path&gt;@all <span class="p">&lt;</span><span class="n">path</span> to new git repo&gt;
+<div class="highlight"><pre><span></span>git p4 clone <span class="p">&lt;</span>depot path<span class="p">&gt;</span>@all <span class="p">&lt;</span>path to new git repo&gt;
 </pre></div>
 
 
 <p>For me, that meant:</p>
-<div class="highlight"><pre>git p<span class="m">4</span> clone <span class="n">//Gladiator/main@all</span> Gladiator-git
+<div class="highlight"><pre><span></span>git p4 clone //Gladiator/main@all Gladiator-git
 </pre></div>
 
 
 <p>Once you've done this, you should have a representation of your Perforce project in Git.</p>
 <h2>Git -&gt; Plastic</h2>
 <p>Plastic has official support for importing from Git. First, you export your git repository using <code>fast-export</code>:</p>
-<div class="highlight"><pre>git fast-export --all -M --signed-tags<span class="o">=</span>strip --tag-of-filtered-object<span class="o">=</span>drop &gt; ..<span class="n">/git-fast-export.dat</span>
+<div class="highlight"><pre><span></span>git fast-export --all -M --signed-tags=strip --tag-of-filtered-object=drop <span class="p">&gt;</span> ../git-fast-export.dat
 </pre></div>
 
 
 <p>Now you can simply import to Plastic with <code>fast-import</code>:</p>
-<div class="highlight"><pre>cm fast-import <span class="p">&lt;</span><span class="n">workspace</span>&gt;@<span class="p">&lt;</span><span class="n">server</span>&gt; ..<span class="n">/git-fast-export.dat</span>
+<div class="highlight"><pre><span></span>cm fast-import <span class="p">&lt;</span>workspace<span class="p">&gt;</span>@<span class="p">&lt;</span>server<span class="p">&gt;</span> ../git-fast-export.dat
 </pre></div>
 	</div><!-- /.entry-content -->
 </section>

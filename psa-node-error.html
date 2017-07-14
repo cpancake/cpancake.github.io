@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-			<title>PSA: Node.js NPM Visual Studio Error - the andrew rogers webzone</title>
+		<title>PSA: Node.js NPM Visual Studio Error - the andrew rogers webzone</title>
 		<meta charset="utf-8" />
 		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
-		<link rel="stylesheet" href="/theme/css/style.min.css?43bff339">
-
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
 
 
 		<meta name="tags" contents="programming" />
@@ -46,12 +46,12 @@
 	</div><!-- /.post-info -->
 	<div class="entry-content">
 		<p>If you are, like me, developing on Windows, and you, like me, have multiple versions of Visual Studio installed, you might see this error when a Node.js package needs to build something:</p>
-<div class="highlight"><pre>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &#39;v100&#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &quot;Upgrade Solution...&quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]
+<div class="highlight"><pre><span></span>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.Cpp.Platform.targets(64,5): error MSB8020: The build tools for Visual Studio 2010 (Platform Toolset = &#39;v100&#39;) cannot be found. To build using the v100 build tools, please install Visual Studio 2010 build tools.  Alternatively, you may upgrade to the current Visual Studio tools by selecting the Project menu or right-click the solution, and then selecting &quot;Upgrade Solution...&quot;. [C:\wamp\node\spotify\node_modules\spotify-web\node_modules\ws\build\bufferutil.vcxproj]
 </pre></div>
 
 
 <p>This is an annoying and unfortunately common error for me when installing packages through NPM. After scouring the internet, it turns out that this is an error with gyp, meaning that neither the NPM or node-gyp folks can fix it. However, you can pass a command line parameter to npm to specify what version to build with:</p>
-<div class="highlight"><pre>npm install spotify-web -msvs_version=2013
+<div class="highlight"><pre><span></span>npm install spotify-web -msvs_version=2013
 </pre></div>
 
 
