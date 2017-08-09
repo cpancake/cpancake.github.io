@@ -1,5 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>the andrew rogers webzone - Andrew Rogers</title><link href="/" rel="alternate"></link><link href="/feeds/andrew-rogers.atom.xml" rel="self"></link><id>/</id><updated>2017-07-14T05:29:00-04:00</updated><entry><title>My Own Personal Soundcloud Archive</title><link href="/soundcloud-archive.html" rel="alternate"></link><published>2017-07-14T05:29:00-04:00</published><updated>2017-07-14T05:29:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:None,2017-07-14:/soundcloud-archive.html</id><summary type="html">&lt;p&gt;A backup of all the rather mediocre tracks that populated my SoundCloud.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Well, it turns out that SoundCloud &lt;a href="http://nymag.com/selectall/2017/07/soundcloud-shutting-down-what-happens-to-the-music.html"&gt;might be dead two months from now&lt;/a&gt;. I don't know if that's true, or whether they're going to find more investors, or if they're going to be acquired. What I do know is, if the site goes belly up, nobody's going to bother archiving anything &lt;em&gt;I've&lt;/em&gt; put there.&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>the andrew rogers webzone - Andrew Rogers</title><link href="/" rel="alternate"></link><link href="/feeds/andrew-rogers.atom.xml" rel="self"></link><id>/</id><updated>2017-08-09T05:04:00-04:00</updated><entry><title>Source Map Analyzer</title><link href="/source-map-analyzer.html" rel="alternate"></link><published>2017-08-09T05:04:00-04:00</published><updated>2017-08-09T05:04:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:None,2017-08-09:/source-map-analyzer.html</id><summary type="html">&lt;p&gt;A tool for taking Source maps, VPK files, and the proper FGDs, and outputting a report on what you need to do to get it to work.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Let me paint you a word picture: you really love this Half-Life 2 mod with all sorts of original maps that are fun to play. But nobody plays this mod anymore! And for a whole bunch of reasons, you just can't get your friends together to play this dead mod. So what do you do?&lt;/p&gt;
+&lt;p&gt;You port it to a mod that people do play, of course! I'm working on that - &lt;a href="https://github.com/cpancake/oc"&gt;you can see my progress here&lt;/a&gt;. At some point in this process, you need to take a map from this dead mod and move it to your living one. You want to know what resources this map uses (so you can copy just those and not the rest of the junk in that folder), and you want to know what entities the map uses that aren't in the mod you're porting it to, so you know what you need to add to be able to play it.&lt;/p&gt;
+&lt;p&gt;I know this isn't a situation many people find themselves in. It's probably not a situation you've found yourself in. I'm probably one of the few people who have ever had a need for this tool, frankly. But if, at some point, someone out there says "I wish I was able to take maps from this dead mod and move it to another mod," I've got good news for them.&lt;/p&gt;
+&lt;h2&gt;The Source Map Analyzer&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="Cliperizer" src="/images/source-map-analyzer.png"&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/cpancake/SourceMapAnalyzer/releases"&gt;View releases.&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/cpancake/SourceMapAnalyzer"&gt;View source code.&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;I started work on this a while ago, around the start of the year. Just recently I decided it'd be nice if I put a GUI on it and released it for people to use. &lt;/p&gt;
+&lt;p&gt;Here's what this tool does: first, you input one or more FGDs that define the mod you're porting to (the "base" FGDs). This could include, for example, the Half-Life 2 multiplayer FGD and the Garry's Mod FGD. Then, you input the VPKs that include all the content that can be mounted in the game you're porting to. This would probably include Half-Life 2, Episode 1 and 2, and maybe Counter-Strike Source. Next, you input the maps you want to process. Last, you input the game FGD (the one you're porting from), and the game directory (of the game you're porting from). This is the directory that includes the "models" and "materials" folders. Click "Process" to start the analyzing. &lt;/p&gt;
+&lt;p&gt;Once it's done, it'll output a report in the folder containing the exe, the filename of which will be the filename of the map. If you leave the "Package" checkbox checked, it will also copy over whatever content that's used in the map that's not used in the VPK into a folder of the same name. The report it generates looks something like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;-- RESOURCES USED --
+    materials/lostcoast/monastery/monastery_exterior001c
+    materials/lostcoast/monastery/monastery_wall001a
+    materials/lostcoast/monastery/monastery_wall001b
+    materials/lostcoast/monastery/monastery_wall002b
+    materials/lostcoast/monastery/monastery_wall002c
+    materials/lostcoast/monastery/monastery_wall003a
+    materials/lostcoast/monastery/monastery_wall003b
+    materials/lostcoast/monastery/monastery_wall003c
+    materials/maps/cleanup/ceilingtilea
+    materials/maps/seamus/seamussand
+    materials/plaster/plasterwall034d_nobump
+    materials/tysn/tysn_beksinski_1
+    sound/tysn/tysn_ringing_1
+    sound/tysn/tysn_weirdface_1_sound
+    sound/tysn/tysndoorpound1
+-- UNIQUE ENTITIES --
+    game_lives_manager
+    game_text_quick
+    item_box_sniper_rounds
+    trigger_multiple_oc
+    trigger_once_oc
+    weapon_scripted
+    weapon_sniperrifle
+    weapon_uzi
+-- DIFFERENT ENTITIES --
+    info_player_start
+    npc_fastzombie
+    npc_headcrab
+    npc_headcrab_black
+    npc_headcrab_fast
+    npc_poisonzombie
+    npc_zombie
+    point_teleport
+    trigger_hurt
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Here, the "unique entities" section contains entities that aren't present in the base FGD, and the "different entities" section contains entities that are present in the base FGD, but have different properties in the game FGD. &lt;/p&gt;</content><category term="projects"></category></entry><entry><title>My Own Personal Soundcloud Archive</title><link href="/soundcloud-archive.html" rel="alternate"></link><published>2017-07-14T05:29:00-04:00</published><updated>2017-07-14T05:29:00-04:00</updated><author><name>Andrew Rogers</name></author><id>tag:None,2017-07-14:/soundcloud-archive.html</id><summary type="html">&lt;p&gt;A backup of all the rather mediocre tracks that populated my SoundCloud.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Well, it turns out that SoundCloud &lt;a href="http://nymag.com/selectall/2017/07/soundcloud-shutting-down-what-happens-to-the-music.html"&gt;might be dead two months from now&lt;/a&gt;. I don't know if that's true, or whether they're going to find more investors, or if they're going to be acquired. What I do know is, if the site goes belly up, nobody's going to bother archiving anything &lt;em&gt;I've&lt;/em&gt; put there.&lt;/p&gt;
 &lt;p&gt;Here's an archive of all the tracks I've uploaded to SoundCloud in chronological order. Feel free to download any of them by right clicking on the audio player and selecting "Save audio as..."&lt;/p&gt;
 &lt;h3&gt;Russian Revolution&lt;/h3&gt;
 &lt;p&gt;The first tracks I uploaded to SoundCloud that are still on my page (I've deleted a few over the years to make room for more) were the six tracks I made for a class movie about the Russian Revolution. I also edited and half-directed the movie, which you can find &lt;a href="https://www.youtube.com/watch?v=wr-CB1o_HN8"&gt;here&lt;/a&gt; if you care, which you don't.

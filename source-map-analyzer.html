@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>Source Map Analyzer - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
+
+
+		<meta name="tags" contents="projects" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/games.html">Games</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">Source Map Analyzer</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-08-09T05:04:00-04:00">Wed 09 August 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/projects.html">Projects</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>Let me paint you a word picture: you really love this Half-Life 2 mod with all sorts of original maps that are fun to play. But nobody plays this mod anymore! And for a whole bunch of reasons, you just can't get your friends together to play this dead mod. So what do you do?</p>
+<p>You port it to a mod that people do play, of course! I'm working on that - <a href="https://github.com/cpancake/oc">you can see my progress here</a>. At some point in this process, you need to take a map from this dead mod and move it to your living one. You want to know what resources this map uses (so you can copy just those and not the rest of the junk in that folder), and you want to know what entities the map uses that aren't in the mod you're porting it to, so you know what you need to add to be able to play it.</p>
+<p>I know this isn't a situation many people find themselves in. It's probably not a situation you've found yourself in. I'm probably one of the few people who have ever had a need for this tool, frankly. But if, at some point, someone out there says "I wish I was able to take maps from this dead mod and move it to another mod," I've got good news for them.</p>
+<h2>The Source Map Analyzer</h2>
+<p><img alt="Cliperizer" src="/images/source-map-analyzer.png"></p>
+<ul>
+<li><a href="https://github.com/cpancake/SourceMapAnalyzer/releases">View releases.</a></li>
+<li><a href="https://github.com/cpancake/SourceMapAnalyzer">View source code.</a></li>
+</ul>
+<p>I started work on this a while ago, around the start of the year. Just recently I decided it'd be nice if I put a GUI on it and released it for people to use. </p>
+<p>Here's what this tool does: first, you input one or more FGDs that define the mod you're porting to (the "base" FGDs). This could include, for example, the Half-Life 2 multiplayer FGD and the Garry's Mod FGD. Then, you input the VPKs that include all the content that can be mounted in the game you're porting to. This would probably include Half-Life 2, Episode 1 and 2, and maybe Counter-Strike Source. Next, you input the maps you want to process. Last, you input the game FGD (the one you're porting from), and the game directory (of the game you're porting from). This is the directory that includes the "models" and "materials" folders. Click "Process" to start the analyzing. </p>
+<p>Once it's done, it'll output a report in the folder containing the exe, the filename of which will be the filename of the map. If you leave the "Package" checkbox checked, it will also copy over whatever content that's used in the map that's not used in the VPK into a folder of the same name. The report it generates looks something like this:</p>
+<div class="highlight"><pre><span></span>-- RESOURCES USED --
+    materials/lostcoast/monastery/monastery_exterior001c
+    materials/lostcoast/monastery/monastery_wall001a
+    materials/lostcoast/monastery/monastery_wall001b
+    materials/lostcoast/monastery/monastery_wall002b
+    materials/lostcoast/monastery/monastery_wall002c
+    materials/lostcoast/monastery/monastery_wall003a
+    materials/lostcoast/monastery/monastery_wall003b
+    materials/lostcoast/monastery/monastery_wall003c
+    materials/maps/cleanup/ceilingtilea
+    materials/maps/seamus/seamussand
+    materials/plaster/plasterwall034d_nobump
+    materials/tysn/tysn_beksinski_1
+    sound/tysn/tysn_ringing_1
+    sound/tysn/tysn_weirdface_1_sound
+    sound/tysn/tysndoorpound1
+-- UNIQUE ENTITIES --
+    game_lives_manager
+    game_text_quick
+    item_box_sniper_rounds
+    trigger_multiple_oc
+    trigger_once_oc
+    weapon_scripted
+    weapon_sniperrifle
+    weapon_uzi
+-- DIFFERENT ENTITIES --
+    info_player_start
+    npc_fastzombie
+    npc_headcrab
+    npc_headcrab_black
+    npc_headcrab_fast
+    npc_poisonzombie
+    npc_zombie
+    point_teleport
+    trigger_hurt
+</pre></div>
+
+
+<p>Here, the "unique entities" section contains entities that aren't present in the base FGD, and the "different entities" section contains entities that are present in the base FGD, but have different properties in the game FGD. </p>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "Source Map Analyzer";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
