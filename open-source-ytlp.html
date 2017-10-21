@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>Now Open Source: YouTube Let's Player Simulator 2016 - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
+
+
+		<meta name="tags" contents="open source" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/games.html">Games</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">Now Open Source: YouTube Let's Player Simulator 2016</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-10-21T12:02:00-04:00">Sat 21 October 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/games.html">Games</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>Let me tell you a story.</p>
+<p>The year is 2013. I'm in my freshman year of high school (yes, really). As a freshman who is neither rich nor employed, I'm always looking for new ways to make a bit of cash. I remember when I used to make flash games on Kongregate under the name <a href="http://www.kongregate.com/accounts/Supersnail200">Supersnail200</a>. I made like twenty bucks from that! I'd like twenty bucks.</p>
+<p>But making good games is hard, so why bother? I don't have any ideas anyways. Then I remember a user I used to see upload games all the time on Kongregate: <a href="http://www.kongregate.com/accounts/PaperCup">PaperCup</a>. PaperCup would upload terrible, awful, zero effort games to Kongregate under clickbait titles. People would click on the games, watch an ad, and Kongregate would pay PaperCup for the view - and it didn't matter how bad the game was. All of PaperCup's games seemed to get a few thousand views, which is a few dollars - and that's something!</p>
+<p>So, patterning myself after PaperCup, I created <a href="http://www.kongregate.com/accounts/PlasticContainer">PlasticContainer</a>. In a few weeks I'd make six games, including the now-removed Ultra Water War (my most-played, which Kongregate didn't consider a "real game"), and <a href="http://www.kongregate.com/games/PlasticContainer/spaceship-adventure">Spaceship Adventure</a>. Eventually, I realized it was a lot of working making dumb games, and I stopped.</p>
+<p>A year later (exactly a year later, entirely unplanned) I was watching a Yungtown video named "<a href="https://www.youtube.com/watch?v=KyfNBl-ewbM">Video Game Review Training Video</a>." As this was 2014, and fake simulator games were still all the rage, I decided to make a joke game patterned on the very old game <a href="https://www.newgrounds.com/portal/view/236362">Newgrounds SIM</a>. It took me three hours.</p>
+<p>A year later, it had 20,000 views. I thought that was pretty neat. I didn't think anyone actually cared about this dumb game.</p>
+<p>A few months after that, it had over a hundred thousand. With a positive rating, and positive reviews. People actually <em>liked</em> this game making fun of YouTube LPers, and not in an ironic way. It baffles me. I urge you <a href="http://www.kongregate.com/games/PlasticContainer/youtube-lets-player-simulator-2014">to go play this game</a> and witness how awful it is.</p>
+<p>So, naturally, with an actual success under my belt, I decided to make a sequel. That sequel is YouTube Let's Player Simulator 2016.</p>
+<ul>
+<li><a href="http://www.kongregate.com/games/PlasticContainer/youtube-lets-player-simulator-2016">Play the game.</a></li>
+<li><a href="https://github.com/cpancake/YTLP2016">View source code.</a></li>
+</ul>
+<h2>But why?</h2>
+<p>There's three reasons I decided to make a sequel to this game:</p>
+<ul>
+<li>I'm actually a big fan of simulation and management style games, so I felt like I should actually put in the effort to make a good one, lest this be my only contribution to the world of YouTube Let's Player management games.</li>
+<li>I'd played <em>TubeStar</em>, which is a pretty good YouTube Let's Player simulator on its own.</li>
+<li>Gotta make that money.</li>
+</ul>
+<p>I had a lot of false starts on this project. I wasn't sure whether to make it a web-based HTML5 game, a Flash game, or a mobile game. I wasn't sure whether to continue with the naming convention and name it YTLP2016, or name it something else (I was throwing around "Internet Gaming Superstar," which is why the project is named "IGS."). Eventually, I settled on making a Flash game like the original, but not using the Flash IDE. Instead, it would be in raw AS3.</p>
+<h2>Development</h2>
+<p>AS3 is a language that's very similar to JavaScript. It's actually essentially TypeScript, since they're both derived from the proposal that would become ECMAScript 4 (which was never implemented by browsers). So you can think of it like TypeScript: JavaScript with true classes and optional type checking. I was a big fan.</p>
+<p>The problem with doing things in <em>just</em> AS3 is that you don't have the benefits of any Flash graphical tools. So you have to do <em>everything</em> from scratch. You can see in the source code to YTLP2016 that a lot of it is dedicated to drawing things properly. This wasn't a smart move.</p>
+<p>YTLP2016 took me a long time to write. The parts I got done first were the random generation parts. Those are probably the most interesting: there's name generation, there's poster generation, and there's thumbnail generation. </p>
+<p>The name generation uses Rant, a procedural text generation language I helped work on (actually, it uses an AS3 port of <a href="https://cpancake.me/rant-lite.html">Rant Lite</a>, which I originally wrote for the aforementioned HTML5 attempt at this game). Usernames, company names, game names - they're all generated from Rant patterns. Rant Lite doesn't implement most of the neat features of Rant, however, so they had to be implemented in AS3 (like casing).</p>
+<p>Poster generation uses a large database of what I call "seed" images. These are a selection of 222 free stock photos that are all scaled to poster size. These seeds then go through a random amount of filters, from a list of eleven. These are all hardware accelerated with Adobe's custom shader language, which was hell to get working. Then the title is slapped on with a random font, and it's shipped to the game as a Bitmap.</p>
+<p>Thumbnail generation is like poster generation, but without the filters. A game image is chosen from a list of 273, then a person image is chosen from a list of 35 (maybe - it's random), and they're slapped together with a number.</p>
+<p>If you asked me what I thought the best part of this game was, it would be the random generation. I don't think this game would be worth playing without it.</p>
+<p>The rest of the game is pretty straightforward. There's a few things in there that are kinda significant - for example, the simulated "community," which has no relevance to the game but is placed in there to make the game world feel more "open." But for the most part, it's just a whole lot of UI code.</p>
+<p>The code is a mess, as a combination of the loads of useless UI code and the (relative) crunch near the end, trying to get this thing finally finished. If you look in the comments, you'll see a lot of people commenting on the bugs. I've tried to fix a few of them, but it's impossible.</p>
+<p>This project is also the victim of bad choices coming together to screw me. For example, I designed the Player class to be only the player character, and then used it to represent any player in the game. That was a mistake.</p>
+<h2>Design</h2>
+<p>The design of this game was weak. I'll come right out there and say that.</p>
+<p>There's nothing really fun about it, in my opinion, after about five minutes. What's there to do? Now, I also thought YTLP2014 was a boring game, so maybe I'm not the target audience. But growing your YouTube channel by just clicking buttons to make more videos isn't very fun. I don't really know how you'd make this game fun, unless you made it just like Game Dev Tycoon, which I believe is what <em>YouTubers Life</em> did.</p>
+<p>The best parts of this game come from <em>TubeStar</em>. If <em>TubeStar</em> had procedural generation like this game does, I'd say it would hands down go to <em>TubeStar</em>.</p>
+<h2>Reception</h2>
+<p>Here's what really gets me about this.</p>
+<p>YTLP2014 took me three hours to make. It is currently sitting at 364,805 plays on Kongregate. It has a 3.1 star rating.</p>
+<p>YTLP2016 took me days of heavy work spread out over a few months. There's hundreds of hours of work in this game. It is currently sitting at 34,421 plays on Kongregate. It has a 3.8 star rating.</p>
+<p>Is that what all my work is worth? 0.7 stars?</p>
+<h2>Conclusion</h2>
+<p>YTLP2016 was a waste of my time, but a good lesson in trying to jump on a trend just to make a quick buck. I think my time would've been better spent making a tycoon game that <em>I</em> would like to play. But, oh well. At least I finished it.</p>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "Now Open Source: YouTube Let's Player Simulator 2016";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
