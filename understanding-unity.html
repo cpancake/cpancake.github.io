@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>Understanding Unity - the andrew rogers webzone</title>
+		<meta charset="utf-8" />
+		<link href='//fonts.googleapis.com/css?family=Montserrat:300i,700|Taviraj:400,400i,700' rel='stylesheet' type='text/css'>
+		<link rel="stylesheet" href="/theme/css/style.min.css">
+	
+
+
+		<meta name="tags" contents="programming" />
+
+</head>
+
+<body id="index" class="home">
+	<div class="header">
+		<header id="banner" class="body">
+				<h1><a class="uilink" href="/">the andrew rogers webzone <strong></strong></a></h1>
+		</header><!-- /#banner -->
+		<nav id="menu">
+			<ul>
+				<li><a href="/">Home</a></li>
+				<li><a href="/category/games.html">Games</a></li>
+				<li><a href="/category/projects.html">Projects</a></li>
+				<li><a href="/category/programming.html">Programming</a></li>
+				<li><a href="/category/misc.html">Misc</a></li>
+
+				<br>
+				<li><a href="/portfolio/">Portfolio</a></li>
+			</ul>
+		</nav><!-- /#menu -->
+	</div>
+	<div class="container">
+		<div class="content">
+<section id="content" class="body">
+	<div class="article-header">
+		<h2 class="entry-title">Understanding Unity</h2>
+ 
+	</div>
+	<div class="post-info">
+		<abbr class="published" title="2017-08-31T18:05:00-04:00">Thu 31 August 2017</abbr>
+		<address class="vcard author">
+			by 					<a class="url fn" href="/author/andrew-rogers.html">Andrew Rogers</a>
+		</address>
+		in <a href="/category/programming.html">Programming</a>
+	</div><!-- /.post-info -->
+	<div class="entry-content">
+		<p>Most how-to guides on Unity are about the mechanics of using Unity. Click here to create a material, copy and paste this in this script, drag this onto this - and that's all good. You need to know how to do all that if you're going to make a game in Unity. But where most guides come up short is in explaining <em>why</em> - how do these actions I'm performing help me create a game?</p>
+<p>I understand why they do this - it puts off prospective developers to get a dump of text on what everything does. They figure that creating a simple game in Unity is more interesting than finding out about what a "component" is. That's true. But in this guide, I figure that you're already interested in Unity, but you're held up because you don't really <em>get</em> certain parts of it. So that's what I'm looking to address.</p>
+<p>This will probably be a multi-part series. This is the first of who knows how many parts. I'll write one whenever there's something new to cover.</p>
+<h2>The Unity Interface</h2>
+<p>I'm going to assume you already know how to navigate the interface, or at least the basics of doing so. I'll just go over a summary of the different parts of the interface.</p>
+<p><strong>Scene</strong> - This tab contains a 2D or 3D overview of your scene that can be navigated. This is the main way you'll manipulate objects in your scene.</p>
+<p><strong>Game</strong> - Most significantly, this is the tab you can play your scene in. Less significantly, but still of note, is that you can use this tab while you're not playing to see what the scene you're working on looks like from the active camera. This is helpful if you're trying to position something in a certain spot in the player's view. Note that under the title of this tab you can change the aspect ratio and zoom in on the view.</p>
+<p><strong>Hierarchy</strong> - This is the tab you can view the hierarchy of GameObjects in (more on this later). You can select GameObjects by name here and move them from one parent to another.</p>
+<p><strong>Console</strong> - This shows any warnings, errors, or other important messages during development or gameplay.</p>
+<div class="uu-tip-box">
+    <strong>Tip</strong> There are several functions under the <a href="https://docs.unity3d.com/ScriptReference/Debug.html" class="uu-api-link">Debug</a> class that can log messages to the console. The most obvious is <a href="https://docs.unity3d.com/ScriptReference/Debug.Log.html" class="uu-api-link">Debug.Log</a>, but you can also use <a href="https://docs.unity3d.com/ScriptReference/Debug.LogError.html" class="uu-api-link">Debug.LogError</a> and <a href="https://docs.unity3d.com/ScriptReference/Debug.LogWarning.html" class="uu-api-link">Debug.LogWarning</a> depending on how serious this message is.
+</div>
+
+<p><strong>Project</strong> - Shows you the files in the "Assets" folder in your game's directory.</p>
+<p><strong>Inspector</strong> - This is how you assign components to scripts and manipulate their options. What does that mean?</p>
+<h2>Components</h2>
+<p>Unity utilizes a version of the <a href="https://en.wikipedia.org/wiki/Entity%E2%80%93component%E2%80%93system">entity-component-system</a> design pattern, but with the components and systems rolled into one. That means that, in Unity:</p>
+<ul>
+<li>An <strong>entity</strong> (called a GameObject in Unity) has a name and some other metadata. Other than that, entities are empty.</li>
+<li>A <strong>component</strong> can be attached to one or more entities (GameObjects) and performs some action with that entity.</li>
+</ul>
+<p>Let's give an example. When you create a light in Unity, you're actually creating a GameObject with a <code>Transform</code> and <code>Light</code> component. Or when you create a cube, you're actually creating a GameObject with a <code>Transform</code>, <code>BoxCollider</code>, <code>MeshRenderer</code>, and <code>MeshFilter</code> component. An audio source is a GameObject with a <code>Transform</code> and <code>AudioSource</code> component. And so on.</p>
+<p>A GameObject without any components is nothing. A cube without any of its components wouldn't be a cube. It takes the <code>MeshFilter</code> component to select the cube mesh, the <code>MeshRenderer</code> component to render the cube mesh, the <code>BoxCollider</code> component to give it physics interactions, and the <code>Transform</code> component to position it, rotate it, and scale it in the world.</p>
+<div class="uu-info-box">
+    <strong>Info</strong> The `Transform` is a special component that exists on every GameObject (so creating a GameObject with no components isn't possible in Unity). It's the first component on every GameObject in the inspector. When you access the `transform` property of a GameObject, you're actually accessing the `Transform` component.
+
+    This is a little "gotcha" that you might encounter when using Unity, so I'll cover it here. The values the `Transform` shows in the inspector are equivalent to the `localPosition`, `localEulerAngles`, and `localScale` of the `Transform`. *This isn't always the same as the `position`, `eulerAngles`, and `scale`!* These "local" values are relative to the GameObject's *parent* (what it's under in the Hierarchy view), while the non-local properties are relative to the *world*. If a GameObject's parent is rotated 90 degrees on the X axis and the child is rotated -90 degrees, it will be equivalent to setting the `eulerAngles.x` property to 0. If you set the `localEulerAngles.x` property to 0, it would be equivalent to `eulerAngles.x = 90`. 
+
+    Another note - don't directly touch `rotation` unless you know what you're doing. Stick with `eulerAngles` - the 0-360 we all know and love.
+
+    (UI elements actually have a `RectTransform` instead of a `Transform`, but it functions the same way.)
+</div>
+
+<p>A good component should be reusable. I can apply a <code>BoxCollider</code> to any GameObject to make it collide with the world. They shouldn't make assumptions about the other components on the object that it doesn't need to - I can make a cube without a <code>BoxCollider</code>, because the other components on the cube don't need it and don't need to assume it's there. And a good component is <em>composable</em> - it can be mixed with other components depending on its requirements. I can create a sphere, remove the <code>SphereCollider</code>, and add a <code>BoxCollider</code>, and its physics will function as if it's a cube - because the <code>BoxCollider</code> component is composable. I can even apply the <code>SphereCollider</code> <em>and</em> <code>BoxCollider</code> components to the same object, if that's what I wanted.</p>
+<p>If you look along the top menu, right under the window title, you'll see three dropdown menus: "Assets", "GameObject", and "Component". Here's what they do:</p>
+<ul>
+<li><strong>Assets</strong> is for anything that lives in a file. Materials are assets. Textures are assets. Prefabs, scenes, fonts, scripts - they're all assets.</li>
+<li><strong>GameObject</strong> is for pre-made combinations of components. Creating a light from this menu creates a GameObject with a <code>Transform</code> and a <code>Light</code> component. You can use the "Create Empty" option here to create a GameObject with just a <code>Transform</code>. Anything in this menu can be created from an empty GameObject and one or more components.</li>
+<li><strong>Component</strong> is for all components that can be applied to GameObjects. This includes components that you get from the Asset Store. This also includes scripts you make - they're the Component -&gt; Scripts menu, once you restart. Yes, the scripts you create are components! Let's check that out.</li>
+</ul>
+<h2>Scripts</h2>
+<p>Scripts are files that contain code. That's about it. You used to be able to create scripts in C#, JavaScript (well, UnityScript), or Boo (which was kinda like Python). You've only got C# now, and that's probably for the best. </p>
+<p>When you create a script in Unity, it'll create a class that inherits from <code>MonoBehaviour</code> (that's what the colon after the class name means: "inherit"). This is a component! All classes that inherit from <code>MonoBehaviour</code> are components.</p>
+<div class="uu-info-box">
+    <strong>Info</strong> But not all scripts are components! This might be a little confusing - but a script can contain any valid C# code. You just can't add scripts that don't contain a `MonoBehaviour` to a GameObject. So why would you create a script that's not a component? If it contains code that's used from other scripts. Maybe a file containing utility functions used from multiple components, or a file containing constant values you need to access from other scripts.
+</div>
+
+<p>When you create a new script from Unity, they'll be two functions in it: <code>Start</code> and <code>Update</code>. These are what Unity calls "Messages". There are a lot of these - look at the "Messages" section of the <a href="https://docs.unity3d.com/ScriptReference/MonoBehaviour.html" class="uu-api-link">MonoBehaviour</a> page on Unity's documentation. Here's a few of the most important:</p>
+<ul>
+<li><strong>Awake</strong> - This is run when the script first loads.</li>
+<li><strong>Start</strong> - This is similar to <code>Awake</code>, but it runs every time the script is re-enabled (so if you disable and then enable the component or GameObject, it will run again).</li>
+<li>
+<p><strong>Update</strong> - This runs every frame that the script is enabled on.
+<div class="uu-info-box">
+    <strong>Info</strong> A note about framerates: Unity doesn't run at a fixed framerate. This is good: if your computer is powerful, you can get 60 FPS or more from a game, and if it's not, it's at least still playable at 30 FPS. But this throws a wrench into your code. Take the following <code>Update</code> function:
+    <code>cs
+    void Update()
+    {
+        transform.Translate(new Vector3(0, 0.5f, 0));
+    }</code>
+    This will move whatever object it's attached to by 0.5 units upwards <em>every frame</em>. If it's at 30 FPS, it'll go up by 15 units a second. At 60, it'll go up by 30 units a second. That's a problem.</p>
+<p>How do you solve it? Unity provides a value called <code>Time.deltaTime</code> - this is the amount of time it took for the last frame to run. At 30 FPS, this will be ~0.033 seconds, and half that at 60 FPS. So if we do want the object to move upwards at 15 units a second, we would change the <code>Update</code> function to this:
+<code>cs
+void Update()
+{
+    transform.Translate(new Vector3(0, 15f * Time.deltaTime, 0));
+}</code>
+</div>
+<em> <strong>FixedUpdate</strong> - If you can't use delta time to do your operations for some reason, <code>FixedUpdate</code> is an update function that will run at a fixed framerate.
+</em> <strong>OnCollisionEnter</strong> - If you have a collider attached to the GameObject, this will run when another collider touches this collider.
+<em> <strong>OnCollisionExit</strong> - The opposite of the above. Will run when a collider stops touching this collider.
+</em> <strong>OnCollisionStay</strong> - This will run every frame where a collider is touching this collider.
+<em> <strong>OnTriggerEnter/Exit/Stay</strong> - Same as above, but will run if the collider "Is Trigger" is checked.
+</em> All the collision and trigger functions have 2D counterparts, like <code>OnCollisionExit2D</code>.</p>
+</li>
+</ul>
+<h2>Connecting Components</h2>
+<p>One of the most common tasks in Unity is accessing a different component from one component, or a different GameObject from a component. We'll take this example script and look at the different methods it uses:</p>
+<div class="codehilite"><pre><span></span>using UnityEngine;
+
+[RequireComponent(typeof(BoxCollider))] // 4
+public class ExampleComponent : MonoBehaviour
+{
+    public GameObject Cube; // 1
+    public GameObject LightObject; // 2
+    public AudioSource Audio; // 3
+
+    void Start()
+    {
+        var light = LightObject.GetComponent&lt;Light&gt;(); // 2
+        var collider = GetComponent&lt;BoxCollider&gt;(); // 4
+    }
+}
+</pre></div>
+
+
+<h3>1. GameObject Reference</h3>
+<p>You can get a reference to the GameObject itself using a public variable of the type "GameObject". You can drag the GameObject you want to access into the correct spot in the Inspector.</p>
+<h3>2. GameObject Reference -&gt; Component Reference</h3>
+<p>Using the <code>GetComponent</code> function on a reference to the GameObject (done via the previous step), you can get a component of a specific type from that object. If that object doesn't have that component, it'll return <code>null</code> (which will give you an error if you try to use it). </p>
+<h3>3. Component Reference</h3>
+<p>You can get a reference directly to a certain component. This is done the same way it's done with GameObjects, but you use the type of the component instead of GameObject.</p>
+<h3>4. Component Reference to Self</h3>
+<p>If your component requires another component to be present on the same GameObject, you can use <code>GetComponent</code> without any reference to get the component of the specific type from the object this component is on. I would heavily recommend you use the <code>RequireComponent</code> attribute (seen on line three), which will let Unity enforce this requirement.</p>
+	</div><!-- /.entry-content -->
+</section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+	this.page = {};
+    var disqus_shortname = 'commiesprogblog'; 
+    var disqus_config = function() {
+    	this.page.url = "http://" + window.location.hostname + window.location.pathname;
+    	this.page.identifier = this.page.url;
+    	this.page.title = "Understanding Unity";
+    };
+
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//' + disqus_shortname + '.disqus.com/embed.js'; 
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+		</div>
+		<footer id="contentinfo">
+			<address id="about" class="vcard body">
+				<p>
+					Written by <span class="fn">Andrew Rogers</span> (<span class="nickname">cpancake</span>) - contact me at <span class="email">andrew@<span class="email-obscure">lame-spam-bots-</span><span class="email-dont-obscure">cpancak</span>e.me</span>
+				</p>
+				<p>
+					Proudly powered by <a href="http://getpelican.com/">Pelican</a>, which takes great advantage of <a href="http://python.org">Python</a>.
+				</p>
+			</address><!-- /#about -->
+		</footer><!-- /#contentinfo -->
+		<script>
+			(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+			(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+			m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+			})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+			ga('create', 'UA-51284727-1', 'cpancake.github.io');
+			ga('send', 'pageview');
+		</script>
+	</div>
+</body>
+</html>
